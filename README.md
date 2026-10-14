@@ -11,6 +11,8 @@
 >
 > **Note on scope:** The `plugin-api` and `sample-plugin` sections and the project structure follow the contract described in the project README. The explanations of the packages inside `desktop-app` (db, engine, jvm, plugins, tasks, ui) describe their role and the standard Java design behind them. If your actual class names differ slightly, the concepts remain the same.
 
+> 📖 **Comprehensive Study Guide & Revision Manual:** Check out [**`JVM_STUDIO_MASTER_GUIDE.md`**](file:///c:/Users/DELL/Desktop/java/JVM_STUDIO_MASTER_GUIDE.md) for full architectural explanations, Mermaid diagrams, and deep Java revision concepts (ClassLoaders, Concurrency, Generational GC, NIO.2, JDBC WAL, and Interview Q&As).
+
 ---
 
 ## 📑 Table of Contents
