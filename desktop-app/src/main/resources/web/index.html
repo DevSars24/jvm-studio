@@ -3,1572 +3,1452 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JVM Motion Studio — Live Engine & Orbital Core</title>
+  <title>JVM Studio — Live Task, Telemetry & Architecture Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- GSAP Animation Library -->
+  <!-- Chart.js for real-time spline graphs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <!-- GSAP for micro-interactions -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <!-- Three.js 3D Engine -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     :root {
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
 
-      /* Studio Obsidian / Dark (Default) */
-      --bg-base: #090a0f;
-      --bg-mesh: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.18) 0%, transparent 60%),
-                 radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
-                 radial-gradient(circle at 15% 70%, rgba(14, 165, 233, 0.10) 0%, transparent 50%);
-      --surface-glass: rgba(18, 20, 29, 0.75);
-      --surface-glass-card: rgba(22, 25, 38, 0.65);
-      --surface-hover: rgba(30, 35, 52, 0.85);
-      --border-glass: rgba(255, 255, 255, 0.08);
-      --border-glass-bright: rgba(255, 255, 255, 0.18);
-      --border-glow: rgba(139, 92, 246, 0.35);
+      /* Dark SaaS Palette (from reference design) */
+      --bg-page: #0c0d12;
+      --bg-sidebar: #10121a;
+      --bg-surface: #141722;
+      --bg-surface-elevated: #1a1e2d;
+      --bg-surface-hover: #212638;
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-focus: rgba(168, 85, 247, 0.4);
 
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
 
-      --neon-lime: #ccff00;
-      --neon-lime-glow: rgba(204, 255, 0, 0.4);
-      --neon-cyan: #38bdf8;
-      --neon-violet: #a855f7;
+      --accent-purple: #a855f7;
+      --accent-magenta: #ec4899;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
 
-      --shadow-studio: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
-      --shadow-glow: 0 0 30px -5px rgba(99, 102, 241, 0.3);
+      --grad-primary: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      --grad-purple: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+      --grad-cyan: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+      --grad-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
+
+      --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 4px 10px -2px rgba(0, 0, 0, 0.3);
+      --shadow-glow: 0 0 25px rgba(168, 85, 247, 0.3);
     }
 
     [data-theme="light"] {
-      --bg-base: #f8fafc;
-      --bg-mesh: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
-                 radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
-                 radial-gradient(circle at 15% 70%, rgba(14, 165, 233, 0.05) 0%, transparent 50%);
-      --surface-glass: rgba(255, 255, 255, 0.85);
-      --surface-glass-card: rgba(255, 255, 255, 0.75);
-      --surface-hover: rgba(241, 245, 249, 0.9);
-      --border-glass: rgba(0, 0, 0, 0.08);
-      --border-glass-bright: rgba(0, 0, 0, 0.15);
-      --border-glow: rgba(99, 102, 241, 0.3);
+      --bg-page: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-surface-hover: #e2e8f0;
+      --border-subtle: rgba(0, 0, 0, 0.08);
+      --border-focus: rgba(168, 85, 247, 0.5);
 
       --text-main: #0f172a;
       --text-muted: #475569;
       --text-dim: #94a3b8;
 
-      --neon-lime: #16a34a;
-      --neon-lime-glow: rgba(22, 163, 74, 0.25);
-      --neon-cyan: #0284c7;
-      --neon-violet: #7c3aed;
-
-      --shadow-studio: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
-      --shadow-glow: 0 0 30px -5px rgba(99, 102, 241, 0.15);
+      --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+      --shadow-glow: 0 0 25px rgba(168, 85, 247, 0.15);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: var(--font-sans);
-      background-color: var(--bg-base);
-      background-image: var(--bg-mesh);
-      background-attachment: fixed;
+      background-color: var(--bg-page);
       color: var(--text-main);
-      min-height: 100vh;
       display: flex;
-      flex-direction: column;
+      min-height: 100vh;
       overflow-x: hidden;
-      transition: background-color 0.4s ease, color 0.4s ease;
+      line-height: 1.5;
+      transition: background-color 0.3s, color 0.3s;
     }
 
-    /* Top Studio Navigation Bar */
-    .top-nav {
-      height: 72px;
-      padding: 0 32px;
+    /* Left Sidebar */
+    .sidebar {
+      width: 250px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .brand-wrap {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border-glass);
-      background: var(--surface-glass);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      padding: 0 8px 12px 8px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .brand-group {
+    .brand-logo {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 17px;
+      letter-spacing: -0.5px;
     }
 
     .brand-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #4f46e5 0%, #a855f7 100%);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--grad-primary);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
-      color: #ffffff;
-      font-size: 20px;
-    }
-
-    .brand-titles h1 {
+      color: #fff;
       font-size: 18px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
+      box-shadow: 0 4px 14px rgba(236, 72, 153, 0.4);
+    }
+
+    .nav-list {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .brand-titles p {
-      font-size: 11.5px;
-      color: var(--text-muted);
-      letter-spacing: 0.2px;
-    }
-
-    /* Pill Tabs */
-    .nav-tabs {
-      display: flex;
-      background: rgba(0, 0, 0, 0.25);
-      padding: 4px;
-      border-radius: 30px;
-      border: 1px solid var(--border-glass);
-    }
-    [data-theme="light"] .nav-tabs { background: rgba(0, 0, 0, 0.04); }
-
-    .nav-tab {
-      padding: 8px 18px;
-      border-radius: 24px;
-      font-size: 12.5px;
+    .nav-item {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13.5px;
       font-weight: 600;
       color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .nav-tab:hover {
-      color: var(--text-main);
-    }
-
-    .nav-tab.active {
-      background: var(--surface-hover);
-      color: var(--text-main);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--border-glass-bright);
-    }
-
-    .top-actions {
       display: flex;
       align-items: center;
       gap: 12px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .pill-badge {
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 11px;
+    .nav-item:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      transform: translateX(3px);
+    }
+
+    .nav-item.active {
+      background: var(--bg-surface-elevated);
+      color: var(--accent-purple);
+      border: 1px solid var(--border-subtle);
       font-weight: 700;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-glass);
-      display: inline-flex;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sidebar-footer-title {
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
       align-items: center;
       gap: 6px;
-      letter-spacing: 0.5px;
+      color: var(--text-main);
     }
 
-    .btn-theme {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 1px solid var(--border-glass);
-      background: var(--surface-glass);
+    .sidebar-footer-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Main Content Wrapper */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow-y: auto;
+    }
+
+    /* Top Search & Actions Bar */
+    .top-bar {
+      padding: 16px 36px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-sidebar);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 8px 16px;
+      width: 320px;
+      max-width: 100%;
+    }
+
+    .search-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: var(--font-sans);
+      font-size: 13px;
       color: var(--text-main);
+      width: 100%;
+    }
+    .search-input::placeholder { color: var(--text-dim); }
+
+    .top-right-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-muted);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 15px;
       transition: all 0.2s;
     }
-    .btn-theme:hover {
-      background: var(--surface-hover);
-      transform: scale(1.05);
-    }
+    .icon-btn:hover { background: var(--bg-surface-elevated); color: var(--text-main); }
 
-    /* Main Container */
-    .studio-container {
-      max-width: 1540px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 28px 32px 60px 32px;
+    .user-chip {
       display: flex;
-      flex-direction: column;
-      gap: 28px;
-    }
-
-    /* 3D Motion Studio Panel Layout */
-    .motion-stage {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 24px;
-      background: var(--surface-glass);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid var(--border-glass);
+      align-items: center;
+      gap: 10px;
+      padding: 4px 12px 4px 4px;
       border-radius: 24px;
-      padding: 24px;
-      box-shadow: var(--shadow-studio);
-      position: relative;
-      overflow: hidden;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
     }
 
-    .motion-stage::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 10%; right: 10%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-    }
-
-    /* 3D Viewport Box */
-    .viewport-box {
-      background: radial-gradient(circle at 50% 50%, rgba(20, 24, 38, 0.7) 0%, rgba(8, 10, 16, 0.95) 100%);
-      border: 1px solid var(--border-glass);
-      border-radius: 20px;
-      position: relative;
-      overflow: hidden;
-      min-height: 440px;
-      display: flex;
-      flex-direction: column;
-    }
-    [data-theme="light"] .viewport-box {
-      background: radial-gradient(circle at 50% 50%, rgba(240, 244, 255, 0.8) 0%, rgba(220, 228, 245, 0.95) 100%);
-    }
-
-    #three-canvas-container {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    /* Canvas Overlays */
-    .viewport-header {
-      position: relative;
-      z-index: 10;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      pointer-events: none;
-    }
-
-    .viewport-badge {
-      pointer-events: auto;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-glass-bright);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: var(--neon-cyan);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .viewport-footer {
-      position: absolute;
-      bottom: 16px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      z-index: 10;
-      pointer-events: none;
-    }
-
-    .floating-playhead {
-      pointer-events: auto;
-      background: rgba(14, 17, 26, 0.85);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass-bright);
-      padding: 8px 18px;
-      border-radius: 30px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-    [data-theme="light"] .floating-playhead {
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-
-    .btn-play-mini {
+    .user-avatar {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: #ffffff;
-      color: #000000;
+      background: var(--grad-primary);
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 800;
-      border: none;
-      transition: transform 0.15s;
-    }
-    .btn-play-mini:hover { transform: scale(1.1); }
-
-    .timecode {
-      font-family: var(--font-mono);
       font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-weight: 800;
+      color: #fff;
     }
 
-    /* Motion Controls Sidebar */
-    .controls-panel {
+    /* Content Area */
+    .dashboard-content {
+      padding: 32px 36px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 28px;
+      max-width: 1500px;
+      width: 100%;
+      margin: 0 auto;
     }
 
-    .section-label {
-      font-size: 13.5px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-      color: var(--text-main);
+    /* Welcome / Hero Banner */
+    .hero-banner {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
     }
 
-    /* Radio / Mode Selector Cards */
-    .mode-cards {
+    .hero-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 10px;
     }
 
-    .mode-card {
-      background: var(--surface-glass-card);
-      border: 1px solid var(--border-glass);
-      border-radius: 14px;
-      padding: 13px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .mode-card:hover {
-      background: var(--surface-hover);
-      border-color: var(--border-glass-bright);
-      transform: translateX(2px);
-    }
-
-    .mode-card.active {
-      background: rgba(99, 102, 241, 0.12);
-      border-color: #6366f1;
-    }
-
-    .mode-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .mode-indicator {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      border: 2px solid var(--border-glass-bright);
-      transition: all 0.2s;
-    }
-
-    .mode-card.active .mode-indicator {
-      background: var(--neon-lime);
-      border-color: var(--neon-lime);
-      box-shadow: 0 0 10px var(--neon-lime-glow);
-    }
-
-    /* Parameter Rows with Dotted Leaders */
-    .param-list {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      margin-top: 6px;
-    }
-
-    .param-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 12.5px;
-    }
-
-    .param-name {
-      color: var(--text-muted);
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .param-dots {
-      flex: 1;
-      border-bottom: 1px dotted var(--border-glass-bright);
-      margin: 0 10px;
-      transform: translateY(2px);
-    }
-
-    .param-value {
-      font-family: var(--font-mono);
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    /* Segmented Button (X / Y / Z) */
-    .segmented-group {
-      display: flex;
-      gap: 6px;
-    }
-
-    .seg-btn {
-      padding: 6px 14px;
-      border-radius: 8px;
-      background: var(--surface-glass-card);
-      border: 1px solid var(--border-glass);
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .seg-btn:hover { color: var(--text-main); }
-
-    .seg-btn.active {
-      background: rgba(204, 255, 0, 0.1);
-      border-color: var(--neon-lime);
-      color: var(--neon-lime);
-      box-shadow: 0 0 12px var(--neon-lime-glow);
-    }
-
-    /* Motion Timeline Scrubber */
-    .timeline-strip {
-      grid-column: 1 / -1;
-      border-top: 1px solid var(--border-glass);
-      padding-top: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .timeline-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .timeline-ticks {
-      display: flex;
-      justify-content: space-between;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-dim);
-      padding: 0 6px;
-    }
-
-    .timeline-track-container {
-      position: relative;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .timeline-track-bg {
-      position: absolute;
-      left: 0; right: 0;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 2px;
-    }
-    [data-theme="light"] .timeline-track-bg { background: rgba(0, 0, 0, 0.1); }
-
-    .timeline-track-fill {
-      position: absolute;
-      left: 0;
-      width: 35%;
-      height: 4px;
-      background: linear-gradient(90deg, #4f46e5, var(--neon-cyan));
-      border-radius: 2px;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-    }
-
-    /* Keyframe Diamonds */
-    .keyframe-diamond {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      transform: translate(-50%, -50%) rotate(45deg);
-      top: 50%;
-      background: var(--neon-cyan);
-      box-shadow: 0 0 8px var(--neon-cyan);
-      border-radius: 1px;
-    }
-
-    .timeline-playhead-cursor {
-      position: absolute;
-      top: -2px;
-      left: 35%;
-      transform: translateX(-50%);
-      width: 14px;
-      height: 28px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      pointer-events: none;
-    }
-
-    .cursor-pill {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--neon-lime);
-      box-shadow: 0 0 12px var(--neon-lime);
-    }
-
-    .cursor-line {
-      width: 2px;
-      height: 16px;
-      background: var(--neon-lime);
-    }
-
-    /* Stage Bottom Bar */
-    .stage-bottom {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 6px;
-    }
-
-    .stage-sub {
+    .hero-subtitle {
       font-size: 13px;
       color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .hero-actions {
       display: flex;
+      gap: 10px;
       align-items: center;
-      gap: 8px;
     }
 
-    .cta-actions {
-      display: flex;
-      gap: 12px;
-    }
-
-    .btn-preview {
-      background: var(--surface-glass-card);
-      border: 1px solid var(--border-glass-bright);
-      padding: 10px 22px;
-      border-radius: 12px;
+    .btn {
+      padding: 9px 18px;
+      border-radius: 10px;
       font-size: 13px;
       font-weight: 700;
-      color: var(--text-main);
+      font-family: var(--font-sans);
       cursor: pointer;
+      border: 1px solid var(--border-subtle);
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .btn-preview:hover {
-      background: var(--surface-hover);
+    .btn:active { transform: scale(0.98); }
+
+    .btn-outline {
+      background: var(--bg-surface);
+      color: var(--text-main);
+    }
+    .btn-outline:hover { background: var(--bg-surface-elevated); }
+
+    .btn-gradient {
+      background: var(--grad-primary);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4);
+    }
+    .btn-gradient:hover {
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.55);
       transform: translateY(-1px);
     }
 
-    .btn-render-neon {
-      background: var(--neon-lime);
-      color: #000000;
-      padding: 10px 24px;
-      border-radius: 12px;
-      font-size: 13px;
+    /* Top 4 Metrics Cards (Matches Screenshot) */
+    .metrics-quad {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+
+    .quad-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .quad-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-focus);
+    }
+
+    .quad-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .quad-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .quad-icon {
+      font-size: 18px;
+      color: var(--accent-purple);
+    }
+
+    .quad-number-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .quad-value {
+      font-size: 28px;
       font-weight: 800;
-      border: none;
-      cursor: pointer;
+      letter-spacing: -0.8px;
+      color: var(--text-main);
+    }
+
+    .quad-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 0 25px var(--neon-lime-glow);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      gap: 4px;
     }
-    .btn-render-neon:hover {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 0 35px var(--neon-lime-glow);
+    .pill-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .pill-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+
+    .quad-bottom-sub {
+      font-size: 11.5px;
+      color: var(--text-dim);
     }
 
-    /* Screen Sections */
-    .tab-view { display: none; flex-direction: column; gap: 24px; }
-    .tab-view.active { display: flex; }
-
-    /* Glass Cards Grid */
-    .glass-grid {
+    /* Main Center Grid (Spline Chart + Quick Actions) */
+    .center-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: 1fr 390px;
       gap: 20px;
     }
 
-    .glass-card {
-      background: var(--surface-glass-card);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-glass);
-      border-radius: 20px;
+    .panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
       padding: 24px;
+      box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      box-shadow: var(--shadow-studio);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
+      gap: 18px;
     }
 
-    .glass-card:hover {
-      border-color: var(--border-glow);
-      transform: translateY(-4px);
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
     }
 
-    .card-heading {
+    .panel-title {
       font-size: 16px;
       font-weight: 800;
       letter-spacing: -0.3px;
     }
 
-    .card-text {
-      font-size: 13px;
+    .panel-sub {
+      font-size: 12px;
       color: var(--text-muted);
-      line-height: 1.6;
+      margin-top: 2px;
     }
 
-    /* Tasks List */
-    .task-entry {
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--border-glass);
-      border-radius: 16px;
-      padding: 18px;
+    .chart-legend-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot-purple { width: 8px; height: 8px; border-radius: 50%; background: #a855f7; }
+    .legend-dot-green { width: 8px; height: 8px; border-radius: 50%; background: #10b981; }
+
+    .chart-container-box {
+      width: 100%;
+      height: 250px;
+      position: relative;
+    }
+
+    /* Quick Actions Column */
+    .quick-action-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       transition: all 0.2s;
     }
-    [data-theme="light"] .task-entry { background: rgba(0, 0, 0, 0.02); }
-    .task-entry:hover { border-color: var(--border-glass-bright); }
+    .quick-action-card:hover { border-color: var(--border-focus); }
 
-    .task-top {
+    .quick-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .task-title {
-      font-size: 15px;
+    .quick-badge-title {
+      font-size: 13.5px;
       font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .tag-badge {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 11px;
+    .quick-score-badge {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--accent-purple);
+    }
+
+    .quick-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Bottom Split Grid: Recent Tasks & Java vs C++ Matrix */
+    .bottom-split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* Dynamic Tasks Entry */
+    .recent-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+      gap: 12px;
+    }
+
+    .recent-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .recent-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(168, 85, 247, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--accent-purple);
+      flex-shrink: 0;
+    }
+
+    .recent-text { min-width: 0; }
+    .recent-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recent-sub { font-size: 11px; color: var(--text-dim); }
+
+    .badge-state {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 10.5px;
       font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-running { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-ready { background: var(--bg-surface-hover); color: var(--text-dim); }
+    .badge-completed { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    /* Java vs C++ Deep Architectural Matrix */
+    .matrix-tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 10px;
+      overflow-x: auto;
+    }
+
+    .matrix-tab {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .matrix-tab:hover { color: var(--text-main); background: var(--bg-surface-elevated); }
+    .matrix-tab.active { background: var(--grad-primary); color: #fff; }
+
+    .matrix-content-pane {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .matrix-content-pane.active { display: flex; }
+
+    .compare-boxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .box-jvm {
+      background: rgba(168, 85, 247, 0.08);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .box-cpp {
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .box-tag {
+      font-size: 11px;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+    .box-jvm .box-tag { color: var(--accent-purple); }
+    .box-cpp .box-tag { color: var(--accent-cyan); }
 
-    .tag-running { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
-    .tag-ready { background: rgba(255, 255, 255, 0.08); color: var(--text-muted); }
-    .tag-completed { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-    .tag-paused { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-
-    .progress-track {
-      height: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #6366f1, var(--neon-cyan));
-      border-radius: 3px;
-      transition: width 0.3s ease;
+    .box-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
     }
 
-    /* Buttons */
-    .btn-act {
-      padding: 8px 16px;
-      border-radius: 10px;
-      font-size: 12.5px;
-      font-weight: 600;
-      border: 1px solid var(--border-glass-bright);
-      background: var(--surface-glass);
+    .box-code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px 10px;
+      border-radius: 6px;
       color: var(--text-main);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .btn-act:hover {
-      background: var(--surface-hover);
-      transform: translateY(-1px);
-    }
-    .btn-act.btn-primary {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-      border: none;
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+      overflow-x: auto;
     }
 
-    /* History Table */
-    .table-container {
+    /* Screen Views */
+    .screen-view { display: none; flex-direction: column; gap: 24px; }
+    .screen-view.active { display: flex; }
+
+    /* Tables */
+    .table-box {
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      background: var(--bg-surface);
       overflow-x: auto;
-      border: 1px solid var(--border-glass);
-      border-radius: 16px;
-      background: var(--surface-glass-card);
     }
 
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th {
       text-align: left;
-      padding: 14px 18px;
-      background: rgba(0, 0, 0, 0.2);
+      padding: 12px 16px;
+      background: var(--bg-surface-elevated);
       color: var(--text-dim);
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.6px;
       text-transform: uppercase;
-      border-bottom: 1px solid var(--border-glass);
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-subtle);
     }
     td {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--border-glass);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
       color: var(--text-main);
     }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--surface-hover); }
+    tr:hover td { background: var(--bg-surface-hover); }
 
-    /* Learning Lab Comparative Grid */
-    .lab-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
-      gap: 20px;
-    }
-    .lab-box-jvm {
-      background: rgba(99, 102, 241, 0.08);
-      border: 1px solid rgba(99, 102, 241, 0.25);
-      border-radius: 14px;
-      padding: 16px;
-    }
-    /* Mobile & Tablet Responsiveness */
-    @media (max-width: 1080px) {
-      .motion-stage {
-        grid-template-columns: 1fr;
-        gap: 20px;
-        padding: 20px;
-      }
-      .viewport-box {
-        min-height: 380px;
-      }
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .center-grid { grid-template-columns: 1fr; }
+      .bottom-split-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 768px) {
-      .top-nav {
-        height: auto;
-        padding: 12px 16px;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .brand-titles h1 {
-        font-size: 15.5px;
-      }
-      .brand-titles p {
-        display: none;
-      }
-      .top-actions {
-        order: 2;
-        margin-left: auto;
-      }
-      .nav-tabs {
-        order: 3;
-        width: 100%;
-        overflow-x: auto;
-        padding: 4px;
-        justify-content: flex-start;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-      }
-      .nav-tabs::-webkit-scrollbar {
-        display: none;
-      }
-      .nav-tab {
-        padding: 6px 14px;
-        font-size: 11.5px;
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-      .studio-container {
-        padding: 16px 14px 40px 14px;
-        gap: 20px;
-      }
-      .motion-stage {
-        padding: 16px;
-        border-radius: 18px;
-      }
-      .viewport-box {
-        min-height: 320px;
-        border-radius: 16px;
-      }
-      .stage-bottom {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
-      }
-      .stage-sub {
-        justify-content: center;
-        font-size: 12px;
-        text-align: center;
-      }
-      .cta-actions {
-        flex-direction: column;
-        width: 100%;
-        gap: 8px;
-      }
-      .btn-preview, .btn-render-neon {
-        width: 100%;
-        justify-content: center;
-        text-align: center;
-      }
-      .lab-container {
-        grid-template-columns: 1fr;
-      }
-      .glass-grid {
-        grid-template-columns: 1fr;
-      }
-      #tasks-container {
-        grid-template-columns: 1fr !important;
-      }
-      .param-row {
-        font-size: 12px;
-      }
-      .param-dots {
-        margin: 0 6px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .viewport-box {
-        min-height: 280px;
-      }
-      .floating-playhead {
-        padding: 6px 12px;
-        gap: 8px;
-      }
-      .timecode {
-        font-size: 11px;
-      }
-      .mode-card {
-        padding: 10px 12px;
-        font-size: 12px;
-      }
-      .seg-btn {
-        padding: 5px 10px;
-        font-size: 11px;
-      }
-      .timeline-ticks {
-        font-size: 10px;
-      }
+      body { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border-subtle); }
+      .top-bar { padding: 12px 16px; flex-wrap: wrap; }
+      .search-box { width: 100%; order: 3; }
+      .dashboard-content { padding: 20px 16px; }
+      .compare-boxes { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Studio Bar -->
-  <header class="top-nav">
-    <div class="brand-group">
-      <div class="brand-icon">⚡</div>
-      <div class="brand-titles">
-        <h1>JVM Motion Studio</h1>
-        <p>Real-Time Engine & 3D Orbital Core</p>
+  <!-- Left Sidebar (Exact layout as screenshot) -->
+  <aside class="sidebar">
+    <div class="brand-wrap">
+      <div class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <span>JVM Studio</span>
       </div>
+      <span style="font-size:12px; color:var(--text-dim); cursor:pointer;">◫</span>
     </div>
 
-    <!-- Center Navigation Tabs -->
-    <nav class="nav-tabs">
-      <div class="nav-tab active" onclick="navigateTab('studio')">
-        <span>🪐</span> 3D Core
+    <nav class="nav-list">
+      <div class="nav-item active" onclick="switchNav('dashboard')">
+        <span>🎛️</span> Dashboard
       </div>
-      <div class="nav-tab" onclick="navigateTab('tasks')">
+      <div class="nav-item" onclick="switchNav('tasks')">
         <span>⚙️</span> Task Engine
       </div>
-      <div class="nav-tab" onclick="navigateTab('plugins')">
+      <div class="nav-item" onclick="switchNav('plugins')">
         <span>🔌</span> Dynamic Plugins
       </div>
-      <div class="nav-tab" onclick="navigateTab('history')">
-        <span>📜</span> Audit Records
+      <div class="nav-item" onclick="switchNav('telemetry')">
+        <span>📈</span> JVM Telemetry
       </div>
-      <div class="nav-tab" onclick="navigateTab('lab')">
-        <span>🔬</span> Java vs C++ Lab
+      <div class="nav-item" onclick="switchNav('lab')">
+        <span>🔬</span> Java vs C++ Matrix
+      </div>
+      <div class="nav-item" onclick="switchNav('history')">
+        <span>📜</span> Execution History
+      </div>
+      <div class="nav-item" onclick="switchNav('settings')">
+        <span>🛠️</span> Settings & DB
       </div>
     </nav>
 
-    <!-- Top Right Status & Controls -->
-    <div class="top-actions">
-      <div class="pill-badge" id="engine-status">
-        <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--neon-lime); box-shadow:0 0 8px var(--neon-lime);"></span>
-        <span>HotSpot 64-Bit</span>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-title">
+        <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent-green); box-shadow:0 0 8px var(--accent-green);"></span>
+        <span id="side-java">Java 21 LTS</span>
       </div>
-      <button class="btn-theme" onclick="toggleStudioTheme()" title="Toggle Dark/Light Mode" id="theme-toggle-btn">
-        🌙
-      </button>
+      <div class="sidebar-footer-sub" id="side-jvm">Oracle HotSpot 64-Bit</div>
+      <div class="sidebar-footer-sub" id="side-db">SQLite WAL Persistence</div>
     </div>
-  </header>
+  </aside>
 
-  <!-- Main Content Area -->
-  <div class="studio-container">
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
 
-    <!-- TAB 1: 3D MOTION STUDIO & ORBITAL CORE -->
-    <div id="view-studio" class="tab-view active">
-      <div class="motion-stage">
+    <!-- Top Bar with Real Search & Actions -->
+    <header class="top-bar">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" class="search-input" id="search-bar" placeholder="Search tasks, execution IDs, metrics..." oninput="handleSearch(this.value)">
+      </div>
+
+      <div class="top-right-group">
+        <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme" id="btn-theme">🌙</button>
+        <button class="icon-btn" onclick="requestGc()" title="Trigger Garbage Collection">🧹</button>
         
-        <!-- Left: 3D Interactive Viewport -->
-        <div class="viewport-box">
-          <div id="three-canvas-container"></div>
+        <div class="user-chip">
+          <div class="user-avatar">JVM</div>
+          <div>
+            <div style="font-size:12px; font-weight:800; line-height:1.2;">HotSpot Core</div>
+            <div style="font-size:10px; color:var(--text-dim);" id="top-status">Active • 60s Uptime</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Views -->
+    <main class="dashboard-content">
+
+      <!-- ================= 1. DASHBOARD VIEW (MATCHES SCREENSHOT) ================= -->
+      <section id="view-dashboard" class="screen-view active">
+        
+        <!-- Welcome Hero -->
+        <div class="hero-banner">
+          <div>
+            <h1 class="hero-title">Welcome to JVM Studio 🚀</h1>
+            <p class="hero-subtitle">Real-time HotSpot telemetry, background workers, and architecture comparison.</p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-outline" onclick="switchNav('lab')">
+              <span>🔬</span> Architecture Map
+            </button>
+            <button class="btn btn-gradient" onclick="requestGc()">
+              <span>🧹</span> Trigger System.gc()
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Top Metric Cards (Matches Screenshot Exactly) -->
+        <div class="metrics-quad">
+          <!-- Card 1 -->
+          <div class="quad-card">
+            <div class="quad-top">
+              <span class="quad-label">Total Tasks Executed</span>
+              <span class="quad-icon">📋</span>
+            </div>
+            <div class="quad-number-row">
+              <span class="quad-value" id="card-total-tasks">0</span>
+              <span class="quad-pill pill-purple">↑ Live Active</span>
+            </div>
+            <div class="quad-bottom-sub">Executed across workers</div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="quad-card">
+            <div class="quad-top">
+              <span class="quad-label">Heap Memory Used</span>
+              <span class="quad-icon">🟣</span>
+            </div>
+            <div class="quad-number-row">
+              <span class="quad-value" id="card-heap-used">0 MB</span>
+              <span class="quad-pill pill-green" id="card-heap-pct">0%</span>
+            </div>
+            <div class="quad-bottom-sub" id="card-heap-comm">Committed: 0 MB</div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="quad-card">
+            <div class="quad-top">
+              <span class="quad-label">Platform Threads</span>
+              <span class="quad-icon">📈</span>
+            </div>
+            <div class="quad-number-row">
+              <span class="quad-value" id="card-live-threads">0</span>
+              <span class="quad-pill pill-green" id="card-peak-threads">Peak 0</span>
+            </div>
+            <div class="quad-bottom-sub">Active JVM platform threads</div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="quad-card">
+            <div class="quad-top">
+              <span class="quad-label">GC Total Pause</span>
+              <span class="quad-icon">⏱️</span>
+            </div>
+            <div class="quad-number-row">
+              <span class="quad-value" id="card-gc-time">0 ms</span>
+              <span class="quad-pill pill-purple" id="card-gc-count">0 GCs</span>
+            </div>
+            <div class="quad-bottom-sub">Generational GC cycles</div>
+          </div>
+        </div>
+
+        <!-- Middle Center Grid: Dual-Spline Real Chart & Quick Actions -->
+        <div class="center-grid">
+          <!-- Left: Real Dual-Spline Chart (Matches 'Grammar Score Trends' in screenshot) -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">JVM Heap Allocation & Memory Dynamics</div>
+                <div class="panel-sub">Real-time HotSpot heap monitoring sampled every 1.5s</div>
+              </div>
+              <div class="chart-legend-wrap">
+                <div class="legend-item"><span class="legend-dot-purple"></span> Used Heap (MB)</div>
+                <div class="legend-item"><span class="legend-dot-green"></span> Committed Heap (MB)</div>
+              </div>
+            </div>
+            <div class="chart-container-box">
+              <canvas id="jvmSplineChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Right: Quick Actions Column -->
+          <div class="panel-card" style="gap:14px;">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Quick Actions</div>
+                <div class="panel-sub">Interactive JVM & Plugin Controls</div>
+              </div>
+              <span style="font-size:14px; color:var(--text-dim);">⋮</span>
+            </div>
+
+            <!-- Quick Action 1: Heap Allocation Lab -->
+            <div class="quick-action-card">
+              <div class="quick-top">
+                <span class="quick-badge-title">
+                  <span style="color:var(--accent-purple);">📦</span> Heap Chunk Tester
+                </span>
+                <span class="quick-score-badge" id="qa-alloc-mb">0 MB</span>
+              </div>
+              <p class="quick-desc">Allocate real 20 MB memory chunks into Eden space and release references.</p>
+              <div style="display:flex; gap:8px; margin-top:4px;">
+                <button class="btn btn-gradient" style="padding:6px 14px; font-size:12px;" onclick="allocChunk()">+20 MB</button>
+                <button class="btn btn-outline" style="padding:6px 14px; font-size:12px;" onclick="freeChunks()">Release</button>
+              </div>
+            </div>
+
+            <!-- Quick Action 2: Dynamic Plugin Hot-Load -->
+            <div class="quick-action-card">
+              <div class="quick-top">
+                <span class="quick-badge-title">
+                  <span style="color:var(--accent-green);">🔌</span> Dynamic Plugin
+                </span>
+                <span class="badge-state badge-ready" id="qa-plugin-badge">NOT LOADED</span>
+              </div>
+              <p class="quick-desc">Hot-load <code>sample-plugin-1.0.0.jar</code> into an isolated <code>URLClassLoader</code>.</p>
+              <div style="margin-top:4px;">
+                <button class="btn btn-outline" style="width:100%; justify-content:center; padding:6px 14px; font-size:12px;" onclick="loadSamplePlugin()">
+                  Hot-Load Sample JAR
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Split Grid: Recent Tasks & Java vs C++ Matrix -->
+        <div class="bottom-split-grid">
           
-          <div class="viewport-header">
-            <div class="viewport-badge">
-              <span>●</span> LIVE 3D ORBITAL SIMULATION
+          <!-- Recent Tasks / Documents -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Task Execution Status</div>
+                <div class="panel-sub">Real background workers with cooperative checkpoints</div>
+              </div>
+              <button class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="switchNav('tasks')">View All →</button>
             </div>
-            <div class="pill-badge" id="fps-badge" style="background:rgba(0,0,0,0.6); pointer-events:auto;">
-              60.0 FPS
-            </div>
+            <div id="dashboard-tasks-list"></div>
           </div>
 
-          <div class="viewport-footer">
-            <div class="floating-playhead">
-              <button class="btn-play-mini" id="play-pause-btn" onclick="togglePlayState()">▶</button>
-              <div class="timecode" id="live-timecode">00:02 / 00:06</div>
+          <!-- Java vs C++ Deep Architectural Matrix -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Java vs C++ Architectural Matrix</div>
+                <div class="panel-sub">Real side-by-side engineering comparison</div>
+              </div>
+              <button class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="switchNav('lab')">Full Map →</button>
+            </div>
+
+            <!-- Matrix Tabs -->
+            <div class="matrix-tabs">
+              <div class="matrix-tab active" onclick="switchMatrixTab('loading')">ClassLoading vs dlopen</div>
+              <div class="matrix-tab" onclick="switchMatrixTab('memory')">GC vs RAII</div>
+              <div class="matrix-tab" onclick="switchMatrixTab('reflection')">Reflection vs RTTI</div>
+              <div class="matrix-tab" onclick="switchMatrixTab('portability')">Bytecode vs Native</div>
+            </div>
+
+            <!-- Tab 1: Class Loading -->
+            <div id="matrix-loading" class="matrix-content-pane active">
+              <div class="compare-boxes">
+                <div class="box-jvm">
+                  <span class="box-tag">Java URLClassLoader</span>
+                  <p class="box-desc">Bytecode is dynamically verified and loaded into Metaspace at runtime with full namespace isolation.</p>
+                  <div class="box-code">new URLClassLoader(urls).loadClass(name);</div>
+                </div>
+                <div class="box-cpp">
+                  <span class="box-tag">C++ dlopen / LoadLibrary</span>
+                  <p class="box-desc">Fragile C++ ABI across compilers; requires <code>extern "C"</code> wrappers to prevent mangling errors.</p>
+                  <div class="box-code">void* h = dlopen("lib.so", RTLD_NOW);</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Memory Management -->
+            <div id="matrix-memory" class="matrix-content-pane">
+              <div class="compare-boxes">
+                <div class="box-jvm">
+                  <span class="box-tag">Java Generational GC</span>
+                  <p class="box-desc">Generational collectors (G1, ZGC) eliminate dangling pointers and double-free bugs automatically.</p>
+                  <div class="box-code">try (var res = open()) { ... } // AutoCloseable</div>
+                </div>
+                <div class="box-cpp">
+                  <span class="box-tag">C++ RAII / Smart Pointers</span>
+                  <p class="box-desc">Deterministic destructors run at scope exit with zero GC pause time overhead.</p>
+                  <div class="box-code">auto ptr = std::make_unique&lt;Resource&gt;();</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 3: Reflection -->
+            <div id="matrix-reflection" class="matrix-content-pane">
+              <div class="compare-boxes">
+                <div class="box-jvm">
+                  <span class="box-tag">Java java.lang.reflect</span>
+                  <p class="box-desc">Full reflection on fields, methods, constructors, and runtime annotations (<code>@TaskInfo</code>).</p>
+                  <div class="box-code">clazz.getDeclaredMethods();</div>
+                </div>
+                <div class="box-cpp">
+                  <span class="box-tag">C++ typeid / RTTI</span>
+                  <p class="box-desc">Limited to class identity checking; lacks member and constructor introspection without Qt MOC.</p>
+                  <div class="box-code">typeid(obj).name(); // dynamic_cast</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 4: Portability -->
+            <div id="matrix-portability" class="matrix-content-pane">
+              <div class="compare-boxes">
+                <div class="box-jvm">
+                  <span class="box-tag">Java Bytecode + JIT</span>
+                  <p class="box-desc">Single JAR runs on Windows, macOS, and Linux; HotSpot C1/C2 compiles hot loops into native assembly.</p>
+                  <div class="box-code">javac File.java -> java File (Cross-platform)</div>
+                </div>
+                <div class="box-cpp">
+                  <span class="box-tag">C++ Native Machine Code</span>
+                  <p class="box-desc">Compiles directly into CPU architecture binaries (x86_64, ARM64); zero VM startup overhead.</p>
+                  <div class="box-code">clang++ -O3 main.cpp -o main (OS-dependent)</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- Right: Studio Controls Panel -->
-        <div class="controls-panel">
-          <div class="section-label">
-            <span>Animation Rhythm</span>
-            <span class="pill-badge" style="font-size:10px;">LOOP ENABLED</span>
-          </div>
-
-          <!-- Mode Cards -->
-          <div class="mode-cards">
-            <div class="mode-card active" onclick="selectAnimMode('turntable')">
-              <div class="mode-info">
-                <span>🔵</span>
-                <span>Turntable Orbit</span>
-              </div>
-              <div class="mode-indicator"></div>
-            </div>
-            <div class="mode-card" onclick="selectAnimMode('float')">
-              <div class="mode-info">
-                <span>🔃</span>
-                <span>Thread Concurrency Float</span>
-              </div>
-              <div class="mode-indicator"></div>
-            </div>
-            <div class="mode-card" onclick="selectAnimMode('swing')">
-              <div class="mode-info">
-                <span>〰️</span>
-                <span>GC Shockwave Pulse</span>
-              </div>
-              <div class="mode-indicator"></div>
+      <!-- ================= 2. TASK ENGINE VIEW ================= -->
+      <section id="view-tasks" class="screen-view">
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Task Orchestration Hub</div>
+              <div class="panel-sub">Manage concurrent tasks with cooperative cancel and pause/resume checkpoints</div>
             </div>
           </div>
-
-          <!-- Parameter Rows with Leaders -->
-          <div class="param-list">
-            <div class="param-row">
-              <span class="param-name">Duration</span>
-              <span class="param-dots"></span>
-              <span class="param-value" id="val-duration">6.0s</span>
-            </div>
-
-            <div class="param-row">
-              <span class="param-name">Axis</span>
-              <span class="param-dots"></span>
-              <div class="segmented-group">
-                <button class="seg-btn" id="axis-x" onclick="setAxis('X')">X</button>
-                <button class="seg-btn active" id="axis-y" onclick="setAxis('Y')">Y</button>
-                <button class="seg-btn" id="axis-z" onclick="setAxis('Z')">Z</button>
-              </div>
-            </div>
-
-            <div class="param-row">
-              <span class="param-name">Heap Allocated</span>
-              <span class="param-dots"></span>
-              <span class="param-value" id="val-heap-live" style="color:var(--neon-cyan);">0 MB</span>
-            </div>
-
-            <div class="param-row">
-              <span class="param-name">Platform Threads</span>
-              <span class="param-dots"></span>
-              <span class="param-value" id="val-threads-live">0</span>
-            </div>
-
-            <div class="param-row">
-              <span class="param-name">GC Pause Time</span>
-              <span class="param-dots"></span>
-              <span class="param-value" id="val-gc-time-live">0 ms</span>
-            </div>
-          </div>
+          <div id="all-tasks-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:18px;"></div>
         </div>
+      </section>
 
-        <!-- Timeline Track Strip -->
-        <div class="timeline-strip">
-          <div class="timeline-header">
-            <span style="font-size:12.5px; font-weight:700;">JVM Rotation Cycle</span>
-            <span style="font-size:11.5px; color:var(--text-muted); font-family:var(--font-mono);">Keyframes: 4 Synchronized</span>
-          </div>
-
-          <div class="timeline-ticks">
-            <span>0s</span>
-            <span>2s</span>
-            <span>4s</span>
-            <span>6s</span>
-          </div>
-
-          <div class="timeline-track-container" id="timeline-container" onclick="scrubTimeline(event)">
-            <div class="timeline-track-bg"></div>
-            <div class="timeline-track-fill" id="track-fill"></div>
-            <div class="keyframe-diamond" style="left: 12%;"></div>
-            <div class="keyframe-diamond" style="left: 35%;"></div>
-            <div class="keyframe-diamond" style="left: 70%;"></div>
-            <div class="keyframe-diamond" style="left: 95%;"></div>
-            <div class="timeline-playhead-cursor" id="playhead-cursor">
-              <div class="cursor-pill"></div>
-              <div class="cursor-line"></div>
+      <!-- ================= 3. DYNAMIC PLUGINS VIEW ================= -->
+      <section id="view-plugins" class="screen-view">
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Dynamic Bytecode Plugin Hub</div>
+              <div class="panel-sub">Hot-loads external JAR files dynamically using custom <code>URLClassLoader</code> and <code>ServiceLoader</code></div>
             </div>
-          </div>
-        </div>
-
-        <!-- Bottom Actions -->
-        <div class="stage-bottom">
-          <div class="stage-sub">
-            <span>🪐</span>
-            <span>HotSpot Torus Kinetic Core & Worker Particles</span>
-          </div>
-          <div class="cta-actions">
-            <button class="btn-preview" onclick="allocChunk()">
-              <span>📦</span> +20 MB Heap
-            </button>
-            <button class="btn-preview" onclick="freeChunks()">
-              <span>♻️</span> Free Roots
-            </button>
-            <button class="btn-render-neon" onclick="requestGc()">
-              <span>⚡</span> Trigger GC Pulse
+            <button class="btn btn-gradient" onclick="loadSamplePlugin()">
+              <span>📦</span> Hot-Load Sample Plugin JAR
             </button>
           </div>
+          <div id="plugin-details-container" style="margin-top:14px;">
+            <div style="padding:20px; border-radius:14px; background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); font-size:13.5px;">
+              No dynamic plugin loaded into Metaspace yet. Click "Hot-Load Sample Plugin JAR" to hot-inject <code>sample-plugin-1.0.0.jar</code>.
+            </div>
+          </div>
         </div>
+      </section>
 
-      </div>
+      <!-- ================= 4. TELEMETRY & GC VIEW ================= -->
+      <section id="view-telemetry" class="screen-view">
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">JVM Telemetry & Garbage Collection Lab</div>
+              <div class="panel-sub">Direct observation of memory allocations and collector behavior</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-gradient" onclick="allocChunk()">+20 MB Chunk</button>
+              <button class="btn btn-outline" onclick="freeChunks()">Release References</button>
+              <button class="btn btn-gradient" onclick="requestGc()">Trigger GC</button>
+            </div>
+          </div>
+          <div class="metrics-quad" style="margin-top:10px;">
+            <div class="quad-card">
+              <span class="quad-label">Metaspace / Non-Heap</span>
+              <span class="quad-value" id="tel-nonheap">0 MB</span>
+              <span class="quad-bottom-sub">Class metadata & JIT caches</span>
+            </div>
+            <div class="quad-card">
+              <span class="quad-label">Available Cores</span>
+              <span class="quad-value" id="tel-cores">0</span>
+              <span class="quad-bottom-sub">Hardware CPU processors</span>
+            </div>
+            <div class="quad-card">
+              <span class="quad-label">Process Uptime</span>
+              <span class="quad-value" id="tel-uptime">0s</span>
+              <span class="quad-bottom-sub">Continuous execution</span>
+            </div>
+            <div class="quad-card">
+              <span class="quad-label">Active Worker Tasks</span>
+              <span class="quad-value" id="tel-workers">0</span>
+              <span class="quad-bottom-sub">ThreadPoolExecutor workers</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <!-- Quick Telemetry Cards -->
-      <div class="glass-grid">
-        <div class="glass-card">
-          <div style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Heap Utilization</div>
-          <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="card-heap-used">0 MB</div>
-          <div style="font-size:12px; color:var(--text-muted);" id="card-heap-comm">Committed: 0 MB</div>
-        </div>
-        <div class="glass-card">
-          <div style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Thread Concurrency</div>
-          <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="card-threads">0</div>
-          <div style="font-size:12px; color:var(--text-muted);">Platform workers active</div>
-        </div>
-        <div class="glass-card">
-          <div style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Garbage Collections</div>
-          <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="card-gc">0</div>
-          <div style="font-size:12px; color:var(--text-muted);">Cumulative Stop-The-World events</div>
-        </div>
-        <div class="glass-card">
-          <div style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Runtime Uptime</div>
-          <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="card-uptime">0s</div>
-          <div style="font-size:12px; color:var(--text-muted);">Oracle OpenJDK 21 LTS</div>
-        </div>
-      </div>
-    </div>
+      <!-- ================= 5. COMPLETE JAVA VS C++ MAP VIEW ================= -->
+      <section id="view-lab" class="screen-view">
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Full Java Runtime vs Native C++ Architectural Map</div>
+              <div class="panel-sub">Comprehensive technical comparison of memory, execution model, reflection, and portability</div>
+            </div>
+          </div>
 
-    <!-- TAB 2: TASKS ENGINE -->
-    <div id="view-tasks" class="tab-view">
-      <div class="glass-card">
-        <div class="card-heading">Task Orchestration & Engine Hub</div>
-        <div class="card-text">Non-blocking background workers with cooperative checkpoints, cancellation, and pause/resume primitives.</div>
-        <div id="tasks-container" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:18px; margin-top:12px;"></div>
-      </div>
-    </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:18px; margin-top:12px;">
+            <div class="box-jvm" style="padding:20px;">
+              <span class="box-tag" style="font-size:13px;">1. Memory Management & Safety</span>
+              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Automatic Generational GC</h4>
+              <p class="box-desc">HotSpot uses Eden, Survivor, and Tenured generations with compacting collectors (G1, Parallel, ZGC). Prevents dangling pointers, buffer overflows, and memory use-after-free bugs. Requires explicit resource closing for OS handles via <code>AutoCloseable</code>.</p>
+            </div>
+            <div class="box-cpp" style="padding:20px;">
+              <span class="box-tag" style="font-size:13px;">1. C++ Determinism</span>
+              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">RAII & Smart Pointers</h4>
+              <p class="box-desc">Resource Acquisition Is Initialization: memory and OS handles are freed deterministically at scope exit via <code>std::unique_ptr</code> and <code>std::shared_ptr</code>. Zero pause time overhead, but susceptible to dangling pointers or double-free if raw pointers are mismanaged.</p>
+            </div>
 
-    <!-- TAB 3: DYNAMIC PLUGINS -->
-    <div id="view-plugins" class="tab-view">
-      <div class="glass-card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div class="card-heading">Bytecode Isolation & Dynamic Plugin Hub</div>
-            <div class="card-text">Hot-loads external JAR files dynamically using custom <code>URLClassLoader</code> and <code>ServiceLoader</code>.</div>
-          </div>
-          <button class="btn-render-neon" onclick="loadSamplePlugin()">
-            <span>📦</span> Hot-Load Sample Plugin JAR
-          </button>
-        </div>
-        <div id="plugin-status-box" style="margin-top:16px;">
-          <div style="padding:18px; border-radius:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-glass); color:var(--text-muted); font-size:13.5px;">
-            No external JAR loaded. Click "Hot-Load Sample Plugin JAR" to inject dynamic bytecode into Metaspace.
-          </div>
-        </div>
-      </div>
-    </div>
+            <div class="box-jvm" style="padding:20px;">
+              <span class="box-tag" style="font-size:13px;">2. Dynamic Extensibility</span>
+              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">URLClassLoader & Metaspace</h4>
+              <p class="box-desc">Standardized class file format. Java loads classes dynamically from network or disk, verifies bytecode for stack safety, and isolates plugins via classloader hierarchies.</p>
+            </div>
+            <div class="box-cpp" style="padding:20px;">
+              <span class="box-tag" style="font-size:13px;">2. C++ Shared Libraries</span>
+              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">dlopen & LoadLibrary</h4>
+              <p class="box-desc">Loads shared objects (<code>.so / .dll</code>). Due to compiler-dependent C++ name mangling, dynamic plugin architectures must export functions using C linkage (<code>extern "C"</code>).</p>
+            </div>
 
-    <!-- TAB 4: AUDIT RECORDS -->
-    <div id="view-history" class="tab-view">
-      <div class="glass-card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div class="card-heading">SQLite WAL Execution Records</div>
-            <div class="card-text">Audit persistence records of all scheduled and manual task executions.</div>
-          </div>
-          <button class="btn-act" onclick="fetchHistory()">Refresh Records</button>
-        </div>
-        <div class="table-container" style="margin-top:14px;">
-          <table>
-            <thead>
-              <tr>
-                <th>Exec ID</th>
-                <th>Task Name</th>
-                <th>Category</th>
-                <th>Outcome</th>
-                <th>Duration</th>
-                <th>Items</th>
-                <th>Summary</th>
-              </tr>
-            </thead>
-            <tbody id="history-table-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+            <div class="box-jvm" style="padding:20px;">
+              <span class="box-tag" style="font-size:13px;">3. Introspection & Metadata</span>
+              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Full Reflection & Annotations</h4>
+              <p class="box-desc">Every class retains constant pool metadata. Classes, methods, parameters, and custom runtime annotations (e.g. <code>@TaskInfo</code>) can be discovered and invoked dynamically.</p>
+            </div>
+            <div class="box-cpp" style="padding:20px;">
+              <span class="box-tag" style="font-size:13px;">3. C++ RTTI</span>
+              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Minimal Type Info</h4>
+              <p class="box-desc">C++ provides <code>typeid</code> and <code>dynamic_cast</code> for polymorphic types. Lacks metadata regarding class fields or constructors unless generated via external preprocessors.</p>
+            </div>
 
-    <!-- TAB 5: JAVA VS C++ LAB -->
-    <div id="view-lab" class="tab-view">
-      <div class="lab-container">
-        <div class="glass-card">
-          <div class="card-heading">1. Dynamic Class Loading vs C++ dlopen</div>
-          <div class="lab-box-jvm">
-            <strong style="color:var(--neon-cyan);">Java Runtime:</strong>
-            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Hierarchical <code>URLClassLoader</code> loads standardized bytecode into Metaspace dynamically with rigorous bytecode verification.</p>
-          </div>
-          <div class="lab-box-native">
-            <strong style="color:var(--neon-violet);">C++ Comparison:</strong>
-            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Uses <code>dlopen/LoadLibrary</code>; fragile ABI without standard name mangling across compilers (requires <code>extern "C"</code>).</p>
+            <div class="box-jvm" style="padding:20px;">
+              <span class="box-tag" style="font-size:13px;">4. Portability & Execution</span>
+              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Write Once, Run Anywhere (WORA)</h4>
+              <p class="box-desc">Standard bytecode executes on any compliant JVM. The HotSpot Tiered JIT (C1 Client + C2 Server) profiles running loops and generates optimized native machine instructions at runtime.</p>
+            </div>
+            <div class="box-cpp" style="padding:20px;">
+              <span class="box-tag" style="font-size:13px;">4. Native Compilation</span>
+              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Direct CPU Binaries</h4>
+              <p class="box-desc">AOT compiled into native instructions for the target instruction set. Maximum speed and minimum startup time, but binaries must be compiled and distributed separately for each platform.</p>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="glass-card">
-          <div class="card-heading">2. Reflection & Annotations vs C++ RTTI</div>
-          <div class="lab-box-jvm">
-            <strong style="color:var(--neon-cyan);">Java Runtime:</strong>
-            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Full runtime reflection (<code>java.lang.reflect</code>) inspects methods, constructors, and <code>@TaskInfo</code> metadata from class constant pools.</p>
+      <!-- ================= 6. HISTORY AUDIT VIEW ================= -->
+      <section id="view-history" class="screen-view">
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">SQLite WAL Execution Records</div>
+              <div class="panel-sub">Audit trail of all tasks executed by the engine</div>
+            </div>
+            <button class="btn btn-outline" onclick="loadHistory()">Refresh Records</button>
           </div>
-          <div class="lab-box-native">
-            <strong style="color:var(--neon-violet);">C++ Comparison:</strong>
-            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Offers basic <code>typeid/dynamic_cast</code> but lacks member inspection without external preprocessors (like Qt MOC).</p>
+          <div class="table-box" style="margin-top:12px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Exec ID</th>
+                  <th>Task Name</th>
+                  <th>Category</th>
+                  <th>Outcome</th>
+                  <th>Duration</th>
+                  <th>Items</th>
+                  <th>Summary</th>
+                </tr>
+              </thead>
+              <tbody id="history-rows"></tbody>
+            </table>
           </div>
         </div>
+      </section>
 
-        <div class="glass-card">
-          <div class="card-heading">3. Generational GC vs Deterministic RAII</div>
-          <div class="lab-box-jvm">
-            <strong style="color:var(--neon-cyan);">Java Runtime:</strong>
-            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Generational GC eliminates dangling pointers and double-free vulnerabilities automatically, but requires <code>AutoCloseable</code> for OS resources.</p>
-          </div>
-          <div class="lab-box-native">
-            <strong style="color:var(--neon-violet);">C++ Comparison:</strong>
-            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">RAII with smart pointers (<code>std::unique_ptr</code>) cleans up deterministically at scope exit with zero GC pause overhead.</p>
+      <!-- ================= 7. SETTINGS VIEW ================= -->
+      <section id="view-settings" class="screen-view">
+        <div class="panel-card">
+          <div class="panel-title">Architecture & Database Settings</div>
+          <div style="font-size:13.5px; line-height:2.2; margin-top:10px; color:var(--text-main);">
+            <div><strong>Persistence Engine:</strong> SQLite 3 via JDBC in WAL Mode (Write-Ahead Logging)</div>
+            <div><strong>Database File:</strong> <code>~/.jvmstudio/jvmstudio.db</code></div>
+            <div><strong>Concurrency Pool:</strong> Bounded ThreadPoolExecutor (8 Worker Threads)</div>
+            <div><strong>Garbage Collector:</strong> Generational OpenJDK G1/Parallel Collector</div>
           </div>
         </div>
+      </section>
 
-        <div class="glass-card">
-          <div class="card-heading">4. Bytecode Portability vs Native Machine Code</div>
-          <div class="lab-box-jvm">
-            <strong style="color:var(--neon-cyan);">Java Runtime:</strong>
-            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Standardized bytecode runs unchanged across all operating systems; HotSpot JIT (C1/C2) optimizes hot code to native assembly.</p>
-          </div>
-          <div class="lab-box-native">
-            <strong style="color:var(--neon-violet);">C++ Comparison:</strong>
-            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Compiles directly to native CPU machine code (x86_64, ARM64) with zero VM overhead, but requires separate binaries per target.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    </main>
   </div>
 
-  <!-- SCRIPT: THREE.JS 3D CORE & GSAP ANIMATIONS -->
+  <!-- SCRIPT: REAL DATA HOOKS, CHART.JS & GSAP -->
   <script>
-    // --- 1. Three.js Kinetic Torus Sculpture & Orbital Rings ---
-    let scene, camera, renderer, knotMesh, orbitGroup, gridHelper;
-    let particles = [];
-    let isPlaying = true;
-    let animMode = 'turntable';
-    let currentAxis = 'Y';
-    let cycleTime = 2.0; // 0 to 6 seconds
-    const maxCycle = 6.0;
+    // --- Chart.js Dual-Spline Real Heap Graph ---
+    let jvmChart;
+    const maxPoints = 16;
+    const chartLabels = [];
+    const usedData = [];
+    const committedData = [];
 
-    function init3D() {
-      const container = document.getElementById('three-canvas-container');
-      const width = container.clientWidth || 800;
-      const height = container.clientHeight || 440;
+    function initChart() {
+      const ctx = document.getElementById('jvmSplineChart').getContext('2d');
+      
+      const purpleGrad = ctx.createLinearGradient(0, 0, 0, 250);
+      purpleGrad.addColorStop(0, 'rgba(168, 85, 247, 0.35)');
+      purpleGrad.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
 
-      scene = new THREE.Scene();
+      const greenGrad = ctx.createLinearGradient(0, 0, 0, 250);
+      greenGrad.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+      greenGrad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
-      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-      camera.position.set(0, 5, 14);
-      camera.lookAt(0, 0, 0);
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(width, height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      container.appendChild(renderer.domElement);
-
-      // Perspective Grid Floor (like Motion Studio)
-      gridHelper = new THREE.GridHelper(24, 24, 0x6366f1, 0x1e293b);
-      gridHelper.position.y = -3.5;
-      scene.add(gridHelper);
-
-      // Studio Lighting
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(ambientLight);
-
-      const dirLight1 = new THREE.DirectionalLight(0xccff00, 1.2);
-      dirLight1.position.set(5, 10, 7);
-      scene.add(dirLight1);
-
-      const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.0);
-      dirLight2.position.set(-5, -5, -5);
-      scene.add(dirLight2);
-
-      const pointLight = new THREE.PointLight(0xa855f7, 2, 20);
-      pointLight.position.set(0, 0, 0);
-      scene.add(pointLight);
-
-      // Metallic Chrome Torus Knot Sculpture
-      const geom = new THREE.TorusKnotGeometry(2.2, 0.6, 120, 24, 2, 3);
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0xcccccc,
-        metalness: 0.95,
-        roughness: 0.15,
-        wireframe: false
-      });
-      knotMesh = new THREE.Mesh(geom, mat);
-      scene.add(knotMesh);
-
-      // Orbital Rings Group
-      orbitGroup = new THREE.Group();
-      scene.add(orbitGroup);
-
-      // Create 2 Dashed Orbital Ellipses with glowing satellite nodes
-      createOrbitRing(4.5, 0xccff00, 0.4);
-      createOrbitRing(6.0, 0x38bdf8, -0.3);
-
-      window.addEventListener('resize', onWindowResize);
-      animate();
-    }
-
-    function createOrbitRing(radius, colorHex, tiltAngle) {
-      const curve = new THREE.EllipseCurve(0, 0, radius, radius * 0.7, 0, 2 * Math.PI, false, 0);
-      const points = curve.getPoints(64);
-      const geom = new THREE.BufferGeometry().setFromPoints(points);
-      const mat = new THREE.LineDashedMaterial({
-        color: colorHex,
-        dashSize: 0.4,
-        gapSize: 0.2,
-        opacity: 0.6,
-        transparent: true
-      });
-      const line = new THREE.Line(geom, mat);
-      line.computeLineDistances();
-      line.rotation.x = Math.PI / 2 + tiltAngle;
-      orbitGroup.add(line);
-
-      // Satellite particle node
-      const nodeGeom = new THREE.SphereGeometry(0.22, 16, 16);
-      const nodeMat = new THREE.MeshBasicMaterial({ color: colorHex });
-      const node = new THREE.Mesh(nodeGeom, nodeMat);
-      orbitGroup.add(node);
-      particles.push({ mesh: node, radius: radius, radiusY: radius * 0.7, tilt: tiltAngle, speed: (Math.random() * 0.5 + 0.5) });
-    }
-
-    function onWindowResize() {
-      const container = document.getElementById('three-canvas-container');
-      if (!container || !renderer || !camera) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    }
-
-    let lastTime = performance.now();
-    let frameCount = 0;
-    let fpsTimer = 0;
-
-    function animate() {
-      requestAnimationFrame(animate);
-
-      const now = performance.now();
-      const delta = (now - lastTime) / 1000;
-      lastTime = now;
-
-      frameCount++;
-      fpsTimer += delta;
-      if (fpsTimer >= 0.5) {
-        const fps = (frameCount / fpsTimer).toFixed(1);
-        document.getElementById('fps-badge').innerText = fps + ' FPS';
-        frameCount = 0;
-        fpsTimer = 0;
-      }
-
-      if (isPlaying) {
-        cycleTime = (cycleTime + delta) % maxCycle;
-        updateScrubberUI();
-
-        // Rotate Knot Sculpture based on selected mode & axis
-        const rotSpeed = 0.8;
-        if (animMode === 'turntable') {
-          if (currentAxis === 'X') knotMesh.rotation.x += delta * rotSpeed;
-          else if (currentAxis === 'Y') knotMesh.rotation.y += delta * rotSpeed;
-          else if (currentAxis === 'Z') knotMesh.rotation.z += delta * rotSpeed;
-        } else if (animMode === 'float') {
-          knotMesh.position.y = Math.sin(now * 0.002) * 0.5;
-          knotMesh.rotation.y += delta * 0.4;
-          knotMesh.rotation.z += delta * 0.2;
-        } else if (animMode === 'swing') {
-          knotMesh.rotation.z = Math.sin(now * 0.003) * 0.4;
-          knotMesh.rotation.y += delta * 0.5;
-        }
-
-        // Rotate Orbiting Nodes
-        particles.forEach((p, idx) => {
-          const t = now * 0.001 * p.speed + idx;
-          const x = Math.cos(t) * p.radius;
-          const z = Math.sin(t) * p.radiusY;
-          p.mesh.position.set(x, Math.sin(t) * p.tilt * 2, z);
-        });
-      }
-
-      renderer.render(scene, camera);
-    }
-
-    // --- 2. Timeline & Scrubber Interaction ---
-    function updateScrubberUI() {
-      const pct = (cycleTime / maxCycle) * 100;
-      document.getElementById('track-fill').style.width = pct + '%';
-      document.getElementById('playhead-cursor').style.left = pct + '%';
-
-      const sec = Math.floor(cycleTime);
-      const dec = Math.floor((cycleTime % 1) * 10);
-      document.getElementById('live-timecode').innerText = `00:0${sec} / 00:06`;
-    }
-
-    function scrubTimeline(e) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const pct = Math.max(0, Math.min(1, clickX / rect.width));
-      cycleTime = pct * maxCycle;
-      updateScrubberUI();
-      if (knotMesh) knotMesh.rotation.y = pct * Math.PI * 2;
-    }
-
-    function togglePlayState() {
-      isPlaying = !isPlaying;
-      document.getElementById('play-pause-btn').innerText = isPlaying ? '⏸' : '▶';
-    }
-
-    function selectAnimMode(mode) {
-      animMode = mode;
-      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-
-      if (mode === 'swing') {
-        gsap.to(knotMesh.scale, { x: 1.2, y: 1.2, z: 1.2, duration: 0.3, yoyo: true, repeat: 1 });
-      }
-    }
-
-    function setAxis(axis) {
-      currentAxis = axis;
-      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('axis-' + axis.toLowerCase()).classList.add('active');
-    }
-
-    // --- 3. Tab Switching with GSAP Stagger ---
-    function navigateTab(tabKey) {
-      const target = document.getElementById('view-' + tabKey);
-      const current = document.querySelector('.tab-view.active');
-      if (current === target) return;
-
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-
-      if (current) {
-        gsap.to(current, {
-          opacity: 0,
-          y: -10,
-          duration: 0.2,
-          ease: 'power2.in',
-          onComplete: () => {
-            current.classList.remove('active');
-            target.classList.add('active');
-            gsap.fromTo(target,
-              { opacity: 0, y: 16 },
-              { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
-            );
-            gsap.from(target.querySelectorAll('.glass-card, .task-entry'), {
-              opacity: 0,
-              y: 20,
-              stagger: 0.06,
-              duration: 0.4,
-              ease: 'power2.out',
-              delay: 0.05
-            });
+      jvmChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartLabels,
+          datasets: [
+            {
+              label: 'Used Heap (MB)',
+              data: usedData,
+              borderColor: '#a855f7',
+              backgroundColor: purpleGrad,
+              fill: true,
+              tension: 0.4,
+              borderWidth: 2.5,
+              pointRadius: 3,
+              pointBackgroundColor: '#a855f7'
+            },
+            {
+              label: 'Committed Heap (MB)',
+              data: committedData,
+              borderColor: '#10b981',
+              backgroundColor: greenGrad,
+              fill: true,
+              tension: 0.4,
+              borderWidth: 2,
+              pointRadius: 2,
+              pointBackgroundColor: '#10b981'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a1e2d',
+              titleColor: '#f8fafc',
+              bodyColor: '#cbd5e1',
+              borderColor: 'rgba(255,255,255,0.1)',
+              borderWidth: 1,
+              padding: 10,
+              displayColors: true
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
+            }
           }
-        });
-      } else {
-        target.classList.add('active');
-      }
-
-      if (tabKey === 'tasks') fetchTasks();
-      if (tabKey === 'history') fetchHistory();
+        }
+      });
     }
 
-    // --- 4. Dark / Light Theme Toggle ---
-    function toggleStudioTheme() {
-      const html = document.documentElement;
-      const isDark = html.getAttribute('data-theme') === 'dark';
-      const next = isDark ? 'light' : 'dark';
-      html.setAttribute('data-theme', next);
-      document.getElementById('theme-toggle-btn').innerText = isDark ? '☀️' : '🌙';
+    function pushChartData(used, comm) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      chartLabels.push(timeStr);
+      usedData.push(used);
+      committedData.push(comm);
 
-      // Update grid floor colors in 3D scene
-      if (gridHelper) {
-        scene.remove(gridHelper);
-        gridHelper = new THREE.GridHelper(24, 24, isDark ? 0x6366f1 : 0x4f46e5, isDark ? 0x94a3b8 : 0x1e293b);
-        gridHelper.position.y = -3.5;
-        scene.add(gridHelper);
+      if (chartLabels.length > maxPoints) {
+        chartLabels.shift();
+        usedData.shift();
+        committedData.shift();
       }
+
+      if (jvmChart) jvmChart.update('none');
     }
 
-    // --- 5. Real-Time Telemetry Polling ---
+    // --- Navigation Switching ---
+    function switchNav(viewName) {
+      document.querySelectorAll('.screen-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+      const targetView = document.getElementById('view-' + viewName);
+      if (targetView) targetView.classList.add('active');
+
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      }
+
+      if (viewName === 'tasks') loadAllTasks();
+      if (viewName === 'history') loadHistory();
+    }
+
+    function switchMatrixTab(tabKey) {
+      document.querySelectorAll('.matrix-content-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.matrix-tab').forEach(t => t.classList.remove('active'));
+
+      const pane = document.getElementById('matrix-' + tabKey);
+      if (pane) pane.classList.add('active');
+
+      if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    }
+
+    // --- Real Telemetry Polling (/api/metrics) ---
     async function pollMetrics() {
       try {
         const res = await fetch('/api/metrics');
         const d = await res.json();
 
-        document.getElementById('val-heap-live').innerText = d.heapUsedMb + ' MB';
-        document.getElementById('val-threads-live').innerText = d.liveThreads;
-        document.getElementById('val-gc-time-live').innerText = d.totalGcTimeMs + ' ms';
-
+        // 4 Quad Cards
         document.getElementById('card-heap-used').innerText = d.heapUsedMb + ' MB';
-        document.getElementById('card-heap-comm').innerText = 'Committed: ' + d.heapCommittedMb + ' MB (' + ((d.heapUsedMb / d.heapCommittedMb)*100).toFixed(1) + '%)';
-        document.getElementById('card-threads').innerText = d.liveThreads;
-        document.getElementById('card-gc').innerText = d.totalGcCount;
-        document.getElementById('card-uptime').innerText = d.uptimeSeconds + 's';
+        const pct = ((d.heapUsedMb / d.heapCommittedMb) * 100).toFixed(1);
+        document.getElementById('card-heap-pct').innerText = pct + '%';
+        document.getElementById('card-heap-comm').innerText = 'Committed: ' + d.heapCommittedMb + ' MB';
+
+        document.getElementById('card-live-threads').innerText = d.liveThreads;
+        document.getElementById('card-peak-threads').innerText = 'Peak ' + d.peakThreads;
+
+        document.getElementById('card-gc-time').innerText = d.totalGcTimeMs + ' ms';
+        document.getElementById('card-gc-count').innerText = d.totalGcCount + ' GCs';
+
+        // Telemetry Tab
+        document.getElementById('tel-nonheap').innerText = d.nonHeapUsedMb + ' MB';
+        document.getElementById('tel-cores').innerText = d.availableProcessors;
+        document.getElementById('tel-uptime').innerText = d.uptimeSeconds + 's';
+        document.getElementById('tel-workers').innerText = d.activeTasks;
+
+        // Footer & Header chips
+        document.getElementById('side-java').innerText = d.javaVersion || 'Java 21 LTS';
+        document.getElementById('side-jvm').innerText = (d.jvmName || 'HotSpot') + ' (' + d.osInfo + ')';
+        document.getElementById('top-status').innerText = 'Active • ' + d.uptimeSeconds + 's Uptime';
+
+        document.getElementById('qa-alloc-mb').innerText = (d.webAllocatedMb || 0) + ' MB';
+
+        // Update Chart
+        pushChartData(d.heapUsedMb, d.heapCommittedMb);
       } catch (e) {}
     }
 
-    // --- 6. Dynamic Tasks API & Execution Hub ---
-    async function fetchTasks() {
+    // --- Real Tasks Polling (/api/tasks) ---
+    let cachedTasks = [];
+    async function pollTasks() {
       try {
         const res = await fetch('/api/tasks');
         const tasks = await res.json();
-        const html = tasks.map(t => `
-          <div class="task-entry">
-            <div class="task-top">
-              <div>
-                <div class="task-title">${t.name}</div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">ID: ${t.id} | v${t.version}</div>
+        cachedTasks = tasks;
+
+        // Render Dashboard Recent List (Top 3 tasks)
+        const recentHtml = tasks.slice(0, 3).map(t => `
+          <div class="recent-item">
+            <div class="recent-left">
+              <div class="recent-icon">⚙️</div>
+              <div class="recent-text">
+                <div class="recent-name">${t.name}</div>
+                <div class="recent-sub">${t.message}</div>
               </div>
-              <span class="tag-badge tag-${t.state.toLowerCase()}">${t.state}</span>
             </div>
-            <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">${t.description}</div>
-            <div style="font-size:12px; font-weight:600; color:var(--neon-cyan);">${t.message}</div>
-            ${t.state === 'RUNNING' || t.state === 'PAUSED' ? `
-              <div class="progress-track">
-                <div class="progress-fill" style="width:${Math.max(6, t.progress * 100)}%;"></div>
-              </div>
-            ` : ''}
-            <div style="display:flex; gap:8px; margin-top:8px;">
-              <button class="btn-act btn-primary" onclick="runTask('${t.id}')" ${t.state === 'RUNNING' ? 'disabled' : ''}>Run</button>
-              ${t.state === 'RUNNING' ? `<button class="btn-act" onclick="pauseTask('${t.id}')">Pause</button>` : ''}
-              ${t.state === 'PAUSED' ? `<button class="btn-act" onclick="resumeTask('${t.id}')">Resume</button>` : ''}
-              ${t.state === 'RUNNING' || t.state === 'PAUSED' ? `<button class="btn-act" onclick="cancelTask('${t.id}')" style="color:#f43f5e;">Cancel</button>` : ''}
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge-state badge-${t.state.toLowerCase()}">${t.state}</span>
+              <button class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="runTask('${t.id}')" ${t.state === 'RUNNING' ? 'disabled' : ''}>Run</button>
             </div>
           </div>
         `).join('');
-        document.getElementById('tasks-container').innerHTML = html;
+        document.getElementById('dashboard-tasks-list').innerHTML = recentHtml;
+
+        // Total count in Card 1
+        document.getElementById('card-total-tasks').innerText = tasks.length;
+
+        // Render Task Engine Tab Grid
+        renderAllTasks(tasks);
       } catch (e) {}
     }
 
-    async function fetchHistory() {
+    function renderAllTasks(tasks) {
+      const container = document.getElementById('all-tasks-grid');
+      if (!container) return;
+
+      container.innerHTML = tasks.map(t => `
+        <div class="panel-card" style="gap:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:15px; font-weight:800; color:var(--text-main);">${t.name}</div>
+              <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">ID: ${t.id} | v${t.version} | ${t.category}</div>
+            </div>
+            <span class="badge-state badge-${t.state.toLowerCase()}">${t.state}</span>
+          </div>
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">${t.description}</div>
+          <div style="font-size:12px; font-weight:600; color:var(--accent-purple);">${t.message}</div>
+          ${t.state === 'RUNNING' || t.state === 'PAUSED' ? `
+            <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+              <div style="height:100%; width:${Math.max(6, t.progress * 100)}%; background:var(--grad-primary); border-radius:3px; transition:width 0.3s;"></div>
+            </div>
+          ` : ''}
+          <div style="display:flex; gap:8px; margin-top:6px;">
+            <button class="btn btn-gradient" onclick="runTask('${t.id}')" ${t.state === 'RUNNING' ? 'disabled' : ''}>Run</button>
+            ${t.state === 'RUNNING' ? `<button class="btn btn-outline" onclick="pauseTask('${t.id}')">Pause</button>` : ''}
+            ${t.state === 'PAUSED' ? `<button class="btn btn-gradient" onclick="resumeTask('${t.id}')">Resume</button>` : ''}
+            ${t.state === 'RUNNING' || t.state === 'PAUSED' ? `<button class="btn btn-outline" style="color:var(--accent-rose);" onclick="cancelTask('${t.id}')">Cancel</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function loadAllTasks() {
+      pollTasks();
+    }
+
+    // --- Search Filter ---
+    function handleSearch(term) {
+      term = term.toLowerCase().trim();
+      if (!term) {
+        renderAllTasks(cachedTasks);
+        return;
+      }
+      const filtered = cachedTasks.filter(t => 
+        t.name.toLowerCase().includes(term) ||
+        t.id.toLowerCase().includes(term) ||
+        t.category.toLowerCase().includes(term) ||
+        t.description.toLowerCase().includes(term)
+      );
+      renderAllTasks(filtered);
+    }
+
+    // --- Real History Records (/api/history) ---
+    async function loadHistory() {
       try {
         const res = await fetch('/api/history');
         const history = await res.json();
         const rows = history.map(h => `
           <tr>
-            <td style="font-family:var(--font-mono); font-weight:600; color:var(--neon-cyan);">${h.executionId}</td>
+            <td style="font-family:var(--font-mono); font-weight:700; color:var(--accent-purple);">${h.executionId}</td>
             <td><strong>${h.taskName}</strong></td>
             <td><span style="font-size:11px; color:var(--text-dim);">${h.category}</span></td>
-            <td><span class="tag-badge tag-${h.state.toLowerCase()}">${h.state}</span></td>
+            <td><span class="badge-state badge-${h.state.toLowerCase()}">${h.state}</span></td>
             <td style="font-family:var(--font-mono);">${h.durationMs} ms</td>
             <td>${h.itemsProcessed}</td>
             <td style="color:var(--text-muted);">${h.summary}</td>
           </tr>
         `).join('');
-        document.getElementById('history-table-body').innerHTML = rows || '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-dim);">No executions logged yet.</td></tr>';
+        document.getElementById('history-rows').innerHTML = rows || '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No executions recorded yet.</td></tr>';
       } catch (e) {}
     }
 
-    // --- 7. Task Execution Commands ---
-    async function runTask(id) { await fetch('/api/tasks/run?id=' + id, {method: 'POST'}); fetchTasks(); }
-    async function pauseTask(id) { await fetch('/api/tasks/pause?id=' + id, {method: 'POST'}); fetchTasks(); }
-    async function resumeTask(id) { await fetch('/api/tasks/resume?id=' + id, {method: 'POST'}); fetchTasks(); }
-    async function cancelTask(id) { await fetch('/api/tasks/cancel?id=' + id, {method: 'POST'}); fetchTasks(); }
+    // --- Action Handlers ---
+    async function runTask(id) { await fetch('/api/tasks/run?id=' + id, {method: 'POST'}); pollTasks(); }
+    async function pauseTask(id) { await fetch('/api/tasks/pause?id=' + id, {method: 'POST'}); pollTasks(); }
+    async function resumeTask(id) { await fetch('/api/tasks/resume?id=' + id, {method: 'POST'}); pollTasks(); }
+    async function cancelTask(id) { await fetch('/api/tasks/cancel?id=' + id, {method: 'POST'}); pollTasks(); }
 
     async function allocChunk() {
       await fetch('/api/alloc?mb=20', {method: 'POST'});
       pollMetrics();
-      // Shockwave visual feedback
-      gsap.to(knotMesh.rotation, { x: '+=1.5', duration: 0.5, ease: 'back.out' });
     }
 
     async function freeChunks() {
@@ -1577,10 +1457,7 @@
     }
 
     async function requestGc() {
-      // 3D Shockwave pulse animation
-      gsap.to(knotMesh.scale, { x: 1.35, y: 1.35, z: 1.35, duration: 0.25, yoyo: true, repeat: 1, ease: 'power2.out' });
-      const res = await fetch('/api/gc', {method: 'POST'});
-      const d = await res.json();
+      await fetch('/api/gc', {method: 'POST'});
       pollMetrics();
     }
 
@@ -1588,28 +1465,37 @@
       const res = await fetch('/api/plugins/load-sample', {method: 'POST'});
       const d = await res.json();
       if (d.status === 'loaded') {
-        document.getElementById('plugin-status-box').innerHTML = `
-          <div style="padding:18px; border-radius:14px; background:rgba(204,255,0,0.08); border:1px solid var(--neon-lime); color:var(--neon-lime); font-weight:700;">
-            ✓ Active Dynamic Plugin: ${d.name} (${d.id})
-            <div style="font-size:12px; font-weight:500; color:var(--text-muted); margin-top:4px;">Isolated in URLClassLoader. New task registered in Task Engine.</div>
+        document.getElementById('qa-plugin-badge').innerText = 'LOADED';
+        document.getElementById('qa-plugin-badge').className = 'badge-state badge-completed';
+
+        document.getElementById('plugin-details-container').innerHTML = `
+          <div style="padding:18px; border-radius:14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); color:var(--accent-green);">
+            <div style="font-weight:800; font-size:14px;">✓ ${d.name} (${d.id}) Hot-Loaded Successfully</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+              Bytecode isolated in custom <code>URLClassLoader</code>. Task successfully added to engine.
+            </div>
           </div>
         `;
-        fetchTasks();
+        pollTasks();
       }
+    }
+
+    // --- Theme Toggle ---
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      document.getElementById('btn-theme').innerText = isDark ? '☀️' : '🌙';
     }
 
     // Initialize
     window.addEventListener('load', () => {
-      init3D();
+      initChart();
       pollMetrics();
-      fetchTasks();
-      setInterval(pollMetrics, 1000);
-      setInterval(fetchTasks, 1500);
-
-      // Entrance GSAP Animation
-      gsap.from('.top-nav', { y: -30, opacity: 0, duration: 0.6, ease: 'power3.out' });
-      gsap.from('.motion-stage', { y: 25, opacity: 0, duration: 0.7, ease: 'power3.out', delay: 0.1 });
-      gsap.from('.glass-card', { y: 30, opacity: 0, stagger: 0.08, duration: 0.6, ease: 'power3.out', delay: 0.25 });
+      pollTasks();
+      loadHistory();
+      setInterval(pollMetrics, 1500);
+      setInterval(pollTasks, 2000);
     });
   </script>
 </body>

@@ -315,15 +315,15 @@ public class WebDashboardServer implements AutoCloseable {
     }
 
     private String getDashboardHtml() {
-        try (var in = getClass().getResourceAsStream("/web/index.html")) {
-            if (in != null) {
-                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-            }
-        } catch (Exception ignored) {}
         try {
             Path p = Path.of("desktop-app/src/main/resources/web/index.html");
             if (java.nio.file.Files.exists(p)) {
                 return java.nio.file.Files.readString(p, StandardCharsets.UTF_8);
+            }
+        } catch (Exception ignored) {}
+        try (var in = getClass().getResourceAsStream("/web/index.html")) {
+            if (in != null) {
+                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
             }
         } catch (Exception ignored) {}
         return "<!DOCTYPE html><html><body><h1>JVM Studio Dashboard</h1></body></html>";
