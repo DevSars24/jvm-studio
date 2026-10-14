@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JVM Motion Studio — Live Engine & Orbital Core</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- GSAP Animation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <!-- Three.js 3D Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      /* Studio Obsidian / Dark (Default) */
+      --bg-base: #090a0f;
+      --bg-mesh: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.18) 0%, transparent 60%),
+                 radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+                 radial-gradient(circle at 15% 70%, rgba(14, 165, 233, 0.10) 0%, transparent 50%);
+      --surface-glass: rgba(18, 20, 29, 0.75);
+      --surface-glass-card: rgba(22, 25, 38, 0.65);
+      --surface-hover: rgba(30, 35, 52, 0.85);
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --border-glass-bright: rgba(255, 255, 255, 0.18);
+      --border-glow: rgba(139, 92, 246, 0.35);
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --neon-lime: #ccff00;
+      --neon-lime-glow: rgba(204, 255, 0, 0.4);
+      --neon-cyan: #38bdf8;
+      --neon-violet: #a855f7;
+
+      --shadow-studio: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+      --shadow-glow: 0 0 30px -5px rgba(99, 102, 241, 0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f8fafc;
+      --bg-mesh: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+                 radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+                 radial-gradient(circle at 15% 70%, rgba(14, 165, 233, 0.05) 0%, transparent 50%);
+      --surface-glass: rgba(255, 255, 255, 0.85);
+      --surface-glass-card: rgba(255, 255, 255, 0.75);
+      --surface-hover: rgba(241, 245, 249, 0.9);
+      --border-glass: rgba(0, 0, 0, 0.08);
+      --border-glass-bright: rgba(0, 0, 0, 0.15);
+      --border-glow: rgba(99, 102, 241, 0.3);
+
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+
+      --neon-lime: #16a34a;
+      --neon-lime-glow: rgba(22, 163, 74, 0.25);
+      --neon-cyan: #0284c7;
+      --neon-violet: #7c3aed;
+
+      --shadow-studio: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
+      --shadow-glow: 0 0 30px -5px rgba(99, 102, 241, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      background-image: var(--bg-mesh);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    /* Top Studio Navigation Bar */
+    .top-nav {
+      height: 72px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-glass);
+      background: var(--surface-glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4f46e5 0%, #a855f7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+      color: #ffffff;
+      font-size: 20px;
+    }
+
+    .brand-titles h1 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-titles p {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      letter-spacing: 0.2px;
+    }
+
+    /* Pill Tabs */
+    .nav-tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 4px;
+      border-radius: 30px;
+      border: 1px solid var(--border-glass);
+    }
+    [data-theme="light"] .nav-tabs { background: rgba(0, 0, 0, 0.04); }
+
+    .nav-tab {
+      padding: 8px 18px;
+      border-radius: 24px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-tab:hover {
+      color: var(--text-main);
+    }
+
+    .nav-tab.active {
+      background: var(--surface-hover);
+      color: var(--text-main);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-glass-bright);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pill-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-glass);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-theme {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border-glass);
+      background: var(--surface-glass);
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    .btn-theme:hover {
+      background: var(--surface-hover);
+      transform: scale(1.05);
+    }
+
+    /* Main Container */
+    .studio-container {
+      max-width: 1540px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 32px 60px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* 3D Motion Studio Panel Layout */
+    .motion-stage {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+      background: var(--surface-glass);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--border-glass);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow-studio);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .motion-stage::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+    }
+
+    /* 3D Viewport Box */
+    .viewport-box {
+      background: radial-gradient(circle at 50% 50%, rgba(20, 24, 38, 0.7) 0%, rgba(8, 10, 16, 0.95) 100%);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+      min-height: 440px;
+      display: flex;
+      flex-direction: column;
+    }
+    [data-theme="light"] .viewport-box {
+      background: radial-gradient(circle at 50% 50%, rgba(240, 244, 255, 0.8) 0%, rgba(220, 228, 245, 0.95) 100%);
+    }
+
+    #three-canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Canvas Overlays */
+    .viewport-header {
+      position: relative;
+      z-index: 10;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .viewport-badge {
+      pointer-events: auto;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glass-bright);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--neon-cyan);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .viewport-footer {
+      position: absolute;
+      bottom: 16px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .floating-playhead {
+      pointer-events: auto;
+      background: rgba(14, 17, 26, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass-bright);
+      padding: 8px 18px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    [data-theme="light"] .floating-playhead {
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .btn-play-mini {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 800;
+      border: none;
+      transition: transform 0.15s;
+    }
+    .btn-play-mini:hover { transform: scale(1.1); }
+
+    .timecode {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Motion Controls Sidebar */
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-label {
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Radio / Mode Selector Cards */
+    .mode-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mode-card {
+      background: var(--surface-glass-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 14px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .mode-card:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-glass-bright);
+      transform: translateX(2px);
+    }
+
+    .mode-card.active {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: #6366f1;
+    }
+
+    .mode-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .mode-indicator {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--border-glass-bright);
+      transition: all 0.2s;
+    }
+
+    .mode-card.active .mode-indicator {
+      background: var(--neon-lime);
+      border-color: var(--neon-lime);
+      box-shadow: 0 0 10px var(--neon-lime-glow);
+    }
+
+    /* Parameter Rows with Dotted Leaders */
+    .param-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .param-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+    }
+
+    .param-name {
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .param-dots {
+      flex: 1;
+      border-bottom: 1px dotted var(--border-glass-bright);
+      margin: 0 10px;
+      transform: translateY(2px);
+    }
+
+    .param-value {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Segmented Button (X / Y / Z) */
+    .segmented-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .seg-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: var(--surface-glass-card);
+      border: 1px solid var(--border-glass);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .seg-btn:hover { color: var(--text-main); }
+
+    .seg-btn.active {
+      background: rgba(204, 255, 0, 0.1);
+      border-color: var(--neon-lime);
+      color: var(--neon-lime);
+      box-shadow: 0 0 12px var(--neon-lime-glow);
+    }
+
+    /* Motion Timeline Scrubber */
+    .timeline-strip {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--border-glass);
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .timeline-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .timeline-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 0 6px;
+    }
+
+    .timeline-track-container {
+      position: relative;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .timeline-track-bg {
+      position: absolute;
+      left: 0; right: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+    }
+    [data-theme="light"] .timeline-track-bg { background: rgba(0, 0, 0, 0.1); }
+
+    .timeline-track-fill {
+      position: absolute;
+      left: 0;
+      width: 35%;
+      height: 4px;
+      background: linear-gradient(90deg, #4f46e5, var(--neon-cyan));
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+
+    /* Keyframe Diamonds */
+    .keyframe-diamond {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      transform: translate(-50%, -50%) rotate(45deg);
+      top: 50%;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan);
+      border-radius: 1px;
+    }
+
+    .timeline-playhead-cursor {
+      position: absolute;
+      top: -2px;
+      left: 35%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .cursor-pill {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--neon-lime);
+      box-shadow: 0 0 12px var(--neon-lime);
+    }
+
+    .cursor-line {
+      width: 2px;
+      height: 16px;
+      background: var(--neon-lime);
+    }
+
+    /* Stage Bottom Bar */
+    .stage-bottom {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 6px;
+    }
+
+    .stage-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-preview {
+      background: var(--surface-glass-card);
+      border: 1px solid var(--border-glass-bright);
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-preview:hover {
+      background: var(--surface-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-render-neon {
+      background: var(--neon-lime);
+      color: #000000;
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 25px var(--neon-lime-glow);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-render-neon:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 0 35px var(--neon-lime-glow);
+    }
+
+    /* Screen Sections */
+    .tab-view { display: none; flex-direction: column; gap: 24px; }
+    .tab-view.active { display: flex; }
+
+    /* Glass Cards Grid */
+    .glass-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .glass-card {
+      background: var(--surface-glass-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: var(--shadow-studio);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-4px);
+    }
+
+    .card-heading {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .card-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Tasks List */
+    .task-entry {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    [data-theme="light"] .task-entry { background: rgba(0, 0, 0, 0.02); }
+    .task-entry:hover { border-color: var(--border-glass-bright); }
+
+    .task-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .task-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .tag-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tag-running { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
+    .tag-ready { background: rgba(255, 255, 255, 0.08); color: var(--text-muted); }
+    .tag-completed { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .tag-paused { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+    .progress-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, var(--neon-cyan));
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    /* Buttons */
+    .btn-act {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid var(--border-glass-bright);
+      background: var(--surface-glass);
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-act:hover {
+      background: var(--surface-hover);
+      transform: translateY(-1px);
+    }
+    .btn-act.btn-primary {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      border: none;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+    }
+
+    /* History Table */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      background: var(--surface-glass-card);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      text-align: left;
+      padding: 14px 18px;
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-glass);
+    }
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-glass);
+      color: var(--text-main);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface-hover); }
+
+    /* Learning Lab Comparative Grid */
+    .lab-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+      gap: 20px;
+    }
+    .lab-box-jvm {
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .lab-box-native {
+      background: rgba(168, 85, 247, 0.08);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: 14px;
+      padding: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Studio Bar -->
+  <header class="top-nav">
+    <div class="brand-group">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-titles">
+        <h1>JVM Motion Studio</h1>
+        <p>Real-Time Engine & 3D Orbital Core</p>
+      </div>
+    </div>
+
+    <!-- Center Navigation Tabs -->
+    <nav class="nav-tabs">
+      <div class="nav-tab active" onclick="navigateTab('studio')">
+        <span>🪐</span> 3D Core
+      </div>
+      <div class="nav-tab" onclick="navigateTab('tasks')">
+        <span>⚙️</span> Task Engine
+      </div>
+      <div class="nav-tab" onclick="navigateTab('plugins')">
+        <span>🔌</span> Dynamic Plugins
+      </div>
+      <div class="nav-tab" onclick="navigateTab('history')">
+        <span>📜</span> Audit Records
+      </div>
+      <div class="nav-tab" onclick="navigateTab('lab')">
+        <span>🔬</span> Java vs C++ Lab
+      </div>
+    </nav>
+
+    <!-- Top Right Status & Controls -->
+    <div class="top-actions">
+      <div class="pill-badge" id="engine-status">
+        <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--neon-lime); box-shadow:0 0 8px var(--neon-lime);"></span>
+        <span>HotSpot 64-Bit</span>
+      </div>
+      <button class="btn-theme" onclick="toggleStudioTheme()" title="Toggle Dark/Light Mode" id="theme-toggle-btn">
+        🌙
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <div class="studio-container">
+
+    <!-- TAB 1: 3D MOTION STUDIO & ORBITAL CORE -->
+    <div id="view-studio" class="tab-view active">
+      <div class="motion-stage">
+        
+        <!-- Left: 3D Interactive Viewport -->
+        <div class="viewport-box">
+          <div id="three-canvas-container"></div>
+          
+          <div class="viewport-header">
+            <div class="viewport-badge">
+              <span>●</span> LIVE 3D ORBITAL SIMULATION
+            </div>
+            <div class="pill-badge" id="fps-badge" style="background:rgba(0,0,0,0.6); pointer-events:auto;">
+              60.0 FPS
+            </div>
+          </div>
+
+          <div class="viewport-footer">
+            <div class="floating-playhead">
+              <button class="btn-play-mini" id="play-pause-btn" onclick="togglePlayState()">▶</button>
+              <div class="timecode" id="live-timecode">00:02 / 00:06</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Studio Controls Panel -->
+        <div class="controls-panel">
+          <div class="section-label">
+            <span>Animation Rhythm</span>
+            <span class="pill-badge" style="font-size:10px;">LOOP ENABLED</span>
+          </div>
+
+          <!-- Mode Cards -->
+          <div class="mode-cards">
+            <div class="mode-card active" onclick="selectAnimMode('turntable')">
+              <div class="mode-info">
+                <span>🔵</span>
+                <span>Turntable Orbit</span>
+              </div>
+              <div class="mode-indicator"></div>
+            </div>
+            <div class="mode-card" onclick="selectAnimMode('float')">
+              <div class="mode-info">
+                <span>🔃</span>
+                <span>Thread Concurrency Float</span>
+              </div>
+              <div class="mode-indicator"></div>
+            </div>
+            <div class="mode-card" onclick="selectAnimMode('swing')">
+              <div class="mode-info">
+                <span>〰️</span>
+                <span>GC Shockwave Pulse</span>
+              </div>
+              <div class="mode-indicator"></div>
+            </div>
+          </div>
+
+          <!-- Parameter Rows with Leaders -->
+          <div class="param-list">
+            <div class="param-row">
+              <span class="param-name">Duration</span>
+              <span class="param-dots"></span>
+              <span class="param-value" id="val-duration">6.0s</span>
+            </div>
+
+            <div class="param-row">
+              <span class="param-name">Axis</span>
+              <span class="param-dots"></span>
+              <div class="segmented-group">
+                <button class="seg-btn" id="axis-x" onclick="setAxis('X')">X</button>
+                <button class="seg-btn active" id="axis-y" onclick="setAxis('Y')">Y</button>
+                <button class="seg-btn" id="axis-z" onclick="setAxis('Z')">Z</button>
+              </div>
+            </div>
+
+            <div class="param-row">
+              <span class="param-name">Heap Allocated</span>
+              <span class="param-dots"></span>
+              <span class="param-value" id="val-heap-live" style="color:var(--neon-cyan);">0 MB</span>
+            </div>
+
+            <div class="param-row">
+              <span class="param-name">Platform Threads</span>
+              <span class="param-dots"></span>
+              <span class="param-value" id="val-threads-live">0</span>
+            </div>
+
+            <div class="param-row">
+              <span class="param-name">GC Pause Time</span>
+              <span class="param-dots"></span>
+              <span class="param-value" id="val-gc-time-live">0 ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline Track Strip -->
+        <div class="timeline-strip">
+          <div class="timeline-header">
+            <span style="font-size:12.5px; font-weight:700;">JVM Rotation Cycle</span>
+            <span style="font-size:11.5px; color:var(--text-muted); font-family:var(--font-mono);">Keyframes: 4 Synchronized</span>
+          </div>
+
+          <div class="timeline-ticks">
+            <span>0s</span>
+            <span>2s</span>
+            <span>4s</span>
+            <span>6s</span>
+          </div>
+
+          <div class="timeline-track-container" id="timeline-container" onclick="scrubTimeline(event)">
+            <div class="timeline-track-bg"></div>
+            <div class="timeline-track-fill" id="track-fill"></div>
+            <div class="keyframe-diamond" style="left: 12%;"></div>
+            <div class="keyframe-diamond" style="left: 35%;"></div>
+            <div class="keyframe-diamond" style="left: 70%;"></div>
+            <div class="keyframe-diamond" style="left: 95%;"></div>
+            <div class="timeline-playhead-cursor" id="playhead-cursor">
+              <div class="cursor-pill"></div>
+              <div class="cursor-line"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Actions -->
+        <div class="stage-bottom">
+          <div class="stage-sub">
+            <span>🪐</span>
+            <span>HotSpot Torus Kinetic Core & Worker Particles</span>
+          </div>
+          <div class="cta-actions">
+            <button class="btn-preview" onclick="allocChunk()">
+              <span>📦</span> +20 MB Heap
+            </button>
+            <button class="btn-preview" onclick="freeChunks()">
+              <span>♻️</span> Free Roots
+            </button>
+            <button class="btn-render-neon" onclick="requestGc()">
+              <span>⚡</span> Trigger GC Pulse
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Telemetry Cards -->
+      <div class="glass-grid">
+        <div class="glass-card">
+          <div style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Heap Utilization</div>
+          <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="card-heap-used">0 MB</div>
+          <div style="font-size:12px; color:var(--text-muted);" id="card-heap-comm">Committed: 0 MB</div>
+        </div>
+        <div class="glass-card">
+          <div style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Thread Concurrency</div>
+          <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="card-threads">0</div>
+          <div style="font-size:12px; color:var(--text-muted);">Platform workers active</div>
+        </div>
+        <div class="glass-card">
+          <div style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Garbage Collections</div>
+          <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="card-gc">0</div>
+          <div style="font-size:12px; color:var(--text-muted);">Cumulative Stop-The-World events</div>
+        </div>
+        <div class="glass-card">
+          <div style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Runtime Uptime</div>
+          <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="card-uptime">0s</div>
+          <div style="font-size:12px; color:var(--text-muted);">Oracle OpenJDK 21 LTS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: TASKS ENGINE -->
+    <div id="view-tasks" class="tab-view">
+      <div class="glass-card">
+        <div class="card-heading">Task Orchestration & Engine Hub</div>
+        <div class="card-text">Non-blocking background workers with cooperative checkpoints, cancellation, and pause/resume primitives.</div>
+        <div id="tasks-container" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:18px; margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DYNAMIC PLUGINS -->
+    <div id="view-plugins" class="tab-view">
+      <div class="glass-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="card-heading">Bytecode Isolation & Dynamic Plugin Hub</div>
+            <div class="card-text">Hot-loads external JAR files dynamically using custom <code>URLClassLoader</code> and <code>ServiceLoader</code>.</div>
+          </div>
+          <button class="btn-render-neon" onclick="loadSamplePlugin()">
+            <span>📦</span> Hot-Load Sample Plugin JAR
+          </button>
+        </div>
+        <div id="plugin-status-box" style="margin-top:16px;">
+          <div style="padding:18px; border-radius:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-glass); color:var(--text-muted); font-size:13.5px;">
+            No external JAR loaded. Click "Hot-Load Sample Plugin JAR" to inject dynamic bytecode into Metaspace.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: AUDIT RECORDS -->
+    <div id="view-history" class="tab-view">
+      <div class="glass-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="card-heading">SQLite WAL Execution Records</div>
+            <div class="card-text">Audit persistence records of all scheduled and manual task executions.</div>
+          </div>
+          <button class="btn-act" onclick="fetchHistory()">Refresh Records</button>
+        </div>
+        <div class="table-container" style="margin-top:14px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Exec ID</th>
+                <th>Task Name</th>
+                <th>Category</th>
+                <th>Outcome</th>
+                <th>Duration</th>
+                <th>Items</th>
+                <th>Summary</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: JAVA VS C++ LAB -->
+    <div id="view-lab" class="tab-view">
+      <div class="lab-container">
+        <div class="glass-card">
+          <div class="card-heading">1. Dynamic Class Loading vs C++ dlopen</div>
+          <div class="lab-box-jvm">
+            <strong style="color:var(--neon-cyan);">Java Runtime:</strong>
+            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Hierarchical <code>URLClassLoader</code> loads standardized bytecode into Metaspace dynamically with rigorous bytecode verification.</p>
+          </div>
+          <div class="lab-box-native">
+            <strong style="color:var(--neon-violet);">C++ Comparison:</strong>
+            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Uses <code>dlopen/LoadLibrary</code>; fragile ABI without standard name mangling across compilers (requires <code>extern "C"</code>).</p>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-heading">2. Reflection & Annotations vs C++ RTTI</div>
+          <div class="lab-box-jvm">
+            <strong style="color:var(--neon-cyan);">Java Runtime:</strong>
+            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Full runtime reflection (<code>java.lang.reflect</code>) inspects methods, constructors, and <code>@TaskInfo</code> metadata from class constant pools.</p>
+          </div>
+          <div class="lab-box-native">
+            <strong style="color:var(--neon-violet);">C++ Comparison:</strong>
+            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Offers basic <code>typeid/dynamic_cast</code> but lacks member inspection without external preprocessors (like Qt MOC).</p>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-heading">3. Generational GC vs Deterministic RAII</div>
+          <div class="lab-box-jvm">
+            <strong style="color:var(--neon-cyan);">Java Runtime:</strong>
+            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Generational GC eliminates dangling pointers and double-free vulnerabilities automatically, but requires <code>AutoCloseable</code> for OS resources.</p>
+          </div>
+          <div class="lab-box-native">
+            <strong style="color:var(--neon-violet);">C++ Comparison:</strong>
+            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">RAII with smart pointers (<code>std::unique_ptr</code>) cleans up deterministically at scope exit with zero GC pause overhead.</p>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-heading">4. Bytecode Portability vs Native Machine Code</div>
+          <div class="lab-box-jvm">
+            <strong style="color:var(--neon-cyan);">Java Runtime:</strong>
+            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Standardized bytecode runs unchanged across all operating systems; HotSpot JIT (C1/C2) optimizes hot code to native assembly.</p>
+          </div>
+          <div class="lab-box-native">
+            <strong style="color:var(--neon-violet);">C++ Comparison:</strong>
+            <p style="font-size:12.5px; margin-top:6px; color:var(--text-muted);">Compiles directly to native CPU machine code (x86_64, ARM64) with zero VM overhead, but requires separate binaries per target.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SCRIPT: THREE.JS 3D CORE & GSAP ANIMATIONS -->
+  <script>
+    // --- 1. Three.js Kinetic Torus Sculpture & Orbital Rings ---
+    let scene, camera, renderer, knotMesh, orbitGroup, gridHelper;
+    let particles = [];
+    let isPlaying = true;
+    let animMode = 'turntable';
+    let currentAxis = 'Y';
+    let cycleTime = 2.0; // 0 to 6 seconds
+    const maxCycle = 6.0;
+
+    function init3D() {
+      const container = document.getElementById('three-canvas-container');
+      const width = container.clientWidth || 800;
+      const height = container.clientHeight || 440;
+
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(0, 5, 14);
+      camera.lookAt(0, 0, 0);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Perspective Grid Floor (like Motion Studio)
+      gridHelper = new THREE.GridHelper(24, 24, 0x6366f1, 0x1e293b);
+      gridHelper.position.y = -3.5;
+      scene.add(gridHelper);
+
+      // Studio Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0xccff00, 1.2);
+      dirLight1.position.set(5, 10, 7);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.0);
+      dirLight2.position.set(-5, -5, -5);
+      scene.add(dirLight2);
+
+      const pointLight = new THREE.PointLight(0xa855f7, 2, 20);
+      pointLight.position.set(0, 0, 0);
+      scene.add(pointLight);
+
+      // Metallic Chrome Torus Knot Sculpture
+      const geom = new THREE.TorusKnotGeometry(2.2, 0.6, 120, 24, 2, 3);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xcccccc,
+        metalness: 0.95,
+        roughness: 0.15,
+        wireframe: false
+      });
+      knotMesh = new THREE.Mesh(geom, mat);
+      scene.add(knotMesh);
+
+      // Orbital Rings Group
+      orbitGroup = new THREE.Group();
+      scene.add(orbitGroup);
+
+      // Create 2 Dashed Orbital Ellipses with glowing satellite nodes
+      createOrbitRing(4.5, 0xccff00, 0.4);
+      createOrbitRing(6.0, 0x38bdf8, -0.3);
+
+      window.addEventListener('resize', onWindowResize);
+      animate();
+    }
+
+    function createOrbitRing(radius, colorHex, tiltAngle) {
+      const curve = new THREE.EllipseCurve(0, 0, radius, radius * 0.7, 0, 2 * Math.PI, false, 0);
+      const points = curve.getPoints(64);
+      const geom = new THREE.BufferGeometry().setFromPoints(points);
+      const mat = new THREE.LineDashedMaterial({
+        color: colorHex,
+        dashSize: 0.4,
+        gapSize: 0.2,
+        opacity: 0.6,
+        transparent: true
+      });
+      const line = new THREE.Line(geom, mat);
+      line.computeLineDistances();
+      line.rotation.x = Math.PI / 2 + tiltAngle;
+      orbitGroup.add(line);
+
+      // Satellite particle node
+      const nodeGeom = new THREE.SphereGeometry(0.22, 16, 16);
+      const nodeMat = new THREE.MeshBasicMaterial({ color: colorHex });
+      const node = new THREE.Mesh(nodeGeom, nodeMat);
+      orbitGroup.add(node);
+      particles.push({ mesh: node, radius: radius, radiusY: radius * 0.7, tilt: tiltAngle, speed: (Math.random() * 0.5 + 0.5) });
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('three-canvas-container');
+      if (!container || !renderer || !camera) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    let lastTime = performance.now();
+    let frameCount = 0;
+    let fpsTimer = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const now = performance.now();
+      const delta = (now - lastTime) / 1000;
+      lastTime = now;
+
+      frameCount++;
+      fpsTimer += delta;
+      if (fpsTimer >= 0.5) {
+        const fps = (frameCount / fpsTimer).toFixed(1);
+        document.getElementById('fps-badge').innerText = fps + ' FPS';
+        frameCount = 0;
+        fpsTimer = 0;
+      }
+
+      if (isPlaying) {
+        cycleTime = (cycleTime + delta) % maxCycle;
+        updateScrubberUI();
+
+        // Rotate Knot Sculpture based on selected mode & axis
+        const rotSpeed = 0.8;
+        if (animMode === 'turntable') {
+          if (currentAxis === 'X') knotMesh.rotation.x += delta * rotSpeed;
+          else if (currentAxis === 'Y') knotMesh.rotation.y += delta * rotSpeed;
+          else if (currentAxis === 'Z') knotMesh.rotation.z += delta * rotSpeed;
+        } else if (animMode === 'float') {
+          knotMesh.position.y = Math.sin(now * 0.002) * 0.5;
+          knotMesh.rotation.y += delta * 0.4;
+          knotMesh.rotation.z += delta * 0.2;
+        } else if (animMode === 'swing') {
+          knotMesh.rotation.z = Math.sin(now * 0.003) * 0.4;
+          knotMesh.rotation.y += delta * 0.5;
+        }
+
+        // Rotate Orbiting Nodes
+        particles.forEach((p, idx) => {
+          const t = now * 0.001 * p.speed + idx;
+          const x = Math.cos(t) * p.radius;
+          const z = Math.sin(t) * p.radiusY;
+          p.mesh.position.set(x, Math.sin(t) * p.tilt * 2, z);
+        });
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // --- 2. Timeline & Scrubber Interaction ---
+    function updateScrubberUI() {
+      const pct = (cycleTime / maxCycle) * 100;
+      document.getElementById('track-fill').style.width = pct + '%';
+      document.getElementById('playhead-cursor').style.left = pct + '%';
+
+      const sec = Math.floor(cycleTime);
+      const dec = Math.floor((cycleTime % 1) * 10);
+      document.getElementById('live-timecode').innerText = `00:0${sec} / 00:06`;
+    }
+
+    function scrubTimeline(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, clickX / rect.width));
+      cycleTime = pct * maxCycle;
+      updateScrubberUI();
+      if (knotMesh) knotMesh.rotation.y = pct * Math.PI * 2;
+    }
+
+    function togglePlayState() {
+      isPlaying = !isPlaying;
+      document.getElementById('play-pause-btn').innerText = isPlaying ? '⏸' : '▶';
+    }
+
+    function selectAnimMode(mode) {
+      animMode = mode;
+      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      if (mode === 'swing') {
+        gsap.to(knotMesh.scale, { x: 1.2, y: 1.2, z: 1.2, duration: 0.3, yoyo: true, repeat: 1 });
+      }
+    }
+
+    function setAxis(axis) {
+      currentAxis = axis;
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('axis-' + axis.toLowerCase()).classList.add('active');
+    }
+
+    // --- 3. Tab Switching with GSAP Stagger ---
+    function navigateTab(tabKey) {
+      const target = document.getElementById('view-' + tabKey);
+      const current = document.querySelector('.tab-view.active');
+      if (current === target) return;
+
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      if (current) {
+        gsap.to(current, {
+          opacity: 0,
+          y: -10,
+          duration: 0.2,
+          ease: 'power2.in',
+          onComplete: () => {
+            current.classList.remove('active');
+            target.classList.add('active');
+            gsap.fromTo(target,
+              { opacity: 0, y: 16 },
+              { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
+            );
+            gsap.from(target.querySelectorAll('.glass-card, .task-entry'), {
+              opacity: 0,
+              y: 20,
+              stagger: 0.06,
+              duration: 0.4,
+              ease: 'power2.out',
+              delay: 0.05
+            });
+          }
+        });
+      } else {
+        target.classList.add('active');
+      }
+
+      if (tabKey === 'tasks') fetchTasks();
+      if (tabKey === 'history') fetchHistory();
+    }
+
+    // --- 4. Dark / Light Theme Toggle ---
+    function toggleStudioTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      const next = isDark ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      document.getElementById('theme-toggle-btn').innerText = isDark ? '☀️' : '🌙';
+
+      // Update grid floor colors in 3D scene
+      if (gridHelper) {
+        scene.remove(gridHelper);
+        gridHelper = new THREE.GridHelper(24, 24, isDark ? 0x6366f1 : 0x4f46e5, isDark ? 0x94a3b8 : 0x1e293b);
+        gridHelper.position.y = -3.5;
+        scene.add(gridHelper);
+      }
+    }
+
+    // --- 5. Real-Time Telemetry Polling ---
+    async function pollMetrics() {
+      try {
+        const res = await fetch('/api/metrics');
+        const d = await res.json();
+
+        document.getElementById('val-heap-live').innerText = d.heapUsedMb + ' MB';
+        document.getElementById('val-threads-live').innerText = d.liveThreads;
+        document.getElementById('val-gc-time-live').innerText = d.totalGcTimeMs + ' ms';
+
+        document.getElementById('card-heap-used').innerText = d.heapUsedMb + ' MB';
+        document.getElementById('card-heap-comm').innerText = 'Committed: ' + d.heapCommittedMb + ' MB (' + ((d.heapUsedMb / d.heapCommittedMb)*100).toFixed(1) + '%)';
+        document.getElementById('card-threads').innerText = d.liveThreads;
+        document.getElementById('card-gc').innerText = d.totalGcCount;
+        document.getElementById('card-uptime').innerText = d.uptimeSeconds + 's';
+      } catch (e) {}
+    }
+
+    // --- 6. Dynamic Tasks API & Execution Hub ---
+    async function fetchTasks() {
+      try {
+        const res = await fetch('/api/tasks');
+        const tasks = await res.json();
+        const html = tasks.map(t => `
+          <div class="task-entry">
+            <div class="task-top">
+              <div>
+                <div class="task-title">${t.name}</div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">ID: ${t.id} | v${t.version}</div>
+              </div>
+              <span class="tag-badge tag-${t.state.toLowerCase()}">${t.state}</span>
+            </div>
+            <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">${t.description}</div>
+            <div style="font-size:12px; font-weight:600; color:var(--neon-cyan);">${t.message}</div>
+            ${t.state === 'RUNNING' || t.state === 'PAUSED' ? `
+              <div class="progress-track">
+                <div class="progress-fill" style="width:${Math.max(6, t.progress * 100)}%;"></div>
+              </div>
+            ` : ''}
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button class="btn-act btn-primary" onclick="runTask('${t.id}')" ${t.state === 'RUNNING' ? 'disabled' : ''}>Run</button>
+              ${t.state === 'RUNNING' ? `<button class="btn-act" onclick="pauseTask('${t.id}')">Pause</button>` : ''}
+              ${t.state === 'PAUSED' ? `<button class="btn-act" onclick="resumeTask('${t.id}')">Resume</button>` : ''}
+              ${t.state === 'RUNNING' || t.state === 'PAUSED' ? `<button class="btn-act" onclick="cancelTask('${t.id}')" style="color:#f43f5e;">Cancel</button>` : ''}
+            </div>
+          </div>
+        `).join('');
+        document.getElementById('tasks-container').innerHTML = html;
+      } catch (e) {}
+    }
+
+    async function fetchHistory() {
+      try {
+        const res = await fetch('/api/history');
+        const history = await res.json();
+        const rows = history.map(h => `
+          <tr>
+            <td style="font-family:var(--font-mono); font-weight:600; color:var(--neon-cyan);">${h.executionId}</td>
+            <td><strong>${h.taskName}</strong></td>
+            <td><span style="font-size:11px; color:var(--text-dim);">${h.category}</span></td>
+            <td><span class="tag-badge tag-${h.state.toLowerCase()}">${h.state}</span></td>
+            <td style="font-family:var(--font-mono);">${h.durationMs} ms</td>
+            <td>${h.itemsProcessed}</td>
+            <td style="color:var(--text-muted);">${h.summary}</td>
+          </tr>
+        `).join('');
+        document.getElementById('history-table-body').innerHTML = rows || '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-dim);">No executions logged yet.</td></tr>';
+      } catch (e) {}
+    }
+
+    // --- 7. Task Execution Commands ---
+    async function runTask(id) { await fetch('/api/tasks/run?id=' + id, {method: 'POST'}); fetchTasks(); }
+    async function pauseTask(id) { await fetch('/api/tasks/pause?id=' + id, {method: 'POST'}); fetchTasks(); }
+    async function resumeTask(id) { await fetch('/api/tasks/resume?id=' + id, {method: 'POST'}); fetchTasks(); }
+    async function cancelTask(id) { await fetch('/api/tasks/cancel?id=' + id, {method: 'POST'}); fetchTasks(); }
+
+    async function allocChunk() {
+      await fetch('/api/alloc?mb=20', {method: 'POST'});
+      pollMetrics();
+      // Shockwave visual feedback
+      gsap.to(knotMesh.rotation, { x: '+=1.5', duration: 0.5, ease: 'back.out' });
+    }
+
+    async function freeChunks() {
+      await fetch('/api/free', {method: 'POST'});
+      pollMetrics();
+    }
+
+    async function requestGc() {
+      // 3D Shockwave pulse animation
+      gsap.to(knotMesh.scale, { x: 1.35, y: 1.35, z: 1.35, duration: 0.25, yoyo: true, repeat: 1, ease: 'power2.out' });
+      const res = await fetch('/api/gc', {method: 'POST'});
+      const d = await res.json();
+      pollMetrics();
+    }
+
+    async function loadSamplePlugin() {
+      const res = await fetch('/api/plugins/load-sample', {method: 'POST'});
+      const d = await res.json();
+      if (d.status === 'loaded') {
+        document.getElementById('plugin-status-box').innerHTML = `
+          <div style="padding:18px; border-radius:14px; background:rgba(204,255,0,0.08); border:1px solid var(--neon-lime); color:var(--neon-lime); font-weight:700;">
+            ✓ Active Dynamic Plugin: ${d.name} (${d.id})
+            <div style="font-size:12px; font-weight:500; color:var(--text-muted); margin-top:4px;">Isolated in URLClassLoader. New task registered in Task Engine.</div>
+          </div>
+        `;
+        fetchTasks();
+      }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+      init3D();
+      pollMetrics();
+      fetchTasks();
+      setInterval(pollMetrics, 1000);
+      setInterval(fetchTasks, 1500);
+
+      // Entrance GSAP Animation
+      gsap.from('.top-nav', { y: -30, opacity: 0, duration: 0.6, ease: 'power3.out' });
+      gsap.from('.motion-stage', { y: 25, opacity: 0, duration: 0.7, ease: 'power3.out', delay: 0.1 });
+      gsap.from('.glass-card', { y: 30, opacity: 0, stagger: 0.08, duration: 0.6, ease: 'power3.out', delay: 0.25 });
+    });
+  </script>
+</body>
+</html>
