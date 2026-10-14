@@ -12,6 +12,8 @@
 - **Real-Time JVM Monitoring**: Live telemetry from standard Java JMX Management Beans (`MemoryMXBean`, `ThreadMXBean`, `GarbageCollectorMXBean`).
 - **Java vs C++ Educational Learning Lab**: Deep interactive comparisons analyzing dynamic loading, reflection, memory management, and portability.
 
+> 📖 **Comprehensive Study Guide & Revision Manual:** Check out [**`JVM_STUDIO_MASTER_GUIDE.md`**](file:///c:/Users/DELL/Desktop/java/JVM_STUDIO_MASTER_GUIDE.md) for full architectural explanations, Mermaid diagrams, and deep Java revision concepts (ClassLoaders, Concurrency, Generational GC, NIO.2, JDBC WAL, and Interview Q&As).
+
 ---
 
 ## Architecture Overview
