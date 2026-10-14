@@ -1,0 +1,8 @@
+com\jvmstudio\plugin\api\TaskParameterDescriptor.class
+com\jvmstudio\plugin\api\TaskExecutionStatus.class
+com\jvmstudio\plugin\api\PluginConstants.class
+com\jvmstudio\plugin\api\TaskContext.class
+com\jvmstudio\plugin\api\TaskParameterType.class
+com\jvmstudio\plugin\api\TaskInfo.class
+com\jvmstudio\plugin\api\TaskPlugin.class
+com\jvmstudio\plugin\api\TaskExecutionResult.class
