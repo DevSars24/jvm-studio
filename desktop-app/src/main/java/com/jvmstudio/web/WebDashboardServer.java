@@ -87,6 +87,13 @@ public class WebDashboardServer implements AutoCloseable {
             return;
         }
 
+        long totalWebAllocatedMb = 0;
+        synchronized (webMemoryHolder) {
+            for (byte[] b : webMemoryHolder) {
+                totalWebAllocatedMb += (b.length / (1024L * 1024L));
+            }
+        }
+
         String json = String.format(Locale.ROOT, """
             {
               "heapUsedMb": %.2f,
@@ -124,7 +131,7 @@ public class WebDashboardServer implements AutoCloseable {
                 escapeJson(context.getJvmMonitorService().getOsInfo()),
                 context.getTaskEngine().getActiveTaskCount(),
                 context.getJvmMonitorService().getUptimeMs() / 1000,
-                webMemoryHolder.size() * 20
+                totalWebAllocatedMb
         );
         sendResponse(exchange, 200, "application/json", json);
     }
@@ -248,11 +255,29 @@ public class WebDashboardServer implements AutoCloseable {
 
     private void handleAlloc(HttpExchange exchange) throws IOException {
         try {
-            byte[] chunk = new byte[20 * 1024 * 1024];
+            int mb = 20;
+            Map<String, String> query = parseQuery(exchange.getRequestURI().getQuery());
+            if (query.containsKey("mb")) {
+                try {
+                    int requested = Integer.parseInt(query.get("mb"));
+                    if (requested > 0 && requested <= 20) {
+                        mb = requested;
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+            byte[] chunk = new byte[mb * 1024 * 1024];
             chunk[0] = 7;
             chunk[chunk.length - 1] = 7;
             webMemoryHolder.add(chunk);
-            sendResponse(exchange, 200, "application/json", "{\"status\":\"allocated\",\"chunks\":" + webMemoryHolder.size() + ",\"totalMb\":" + (webMemoryHolder.size() * 20) + "}");
+            long totalWebAllocatedMb = 0;
+            synchronized (webMemoryHolder) {
+                for (byte[] b : webMemoryHolder) {
+                    totalWebAllocatedMb += (b.length / (1024L * 1024L));
+                }
+            }
+            sendResponse(exchange, 200, "application/json", String.format(Locale.ROOT,
+                    "{\"status\":\"allocated\",\"allocatedMb\":%d,\"chunks\":%d,\"totalMb\":%d}",
+                    mb, webMemoryHolder.size(), totalWebAllocatedMb));
         } catch (OutOfMemoryError oom) {
             sendResponse(exchange, 500, "application/json", "{\"error\":\"OutOfMemoryError prevented: heap limit reached\"}");
         }

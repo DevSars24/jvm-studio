@@ -1,6 +1,7 @@
 package com.jvmstudio.ui;
 
 import com.jvmstudio.core.AppContext;
+import com.jvmstudio.web.WebDashboardServer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -14,11 +15,21 @@ import org.slf4j.LoggerFactory;
 public class MainApp extends Application {
     private static final Logger logger = LoggerFactory.getLogger(MainApp.class);
     private AppContext appContext;
+    private WebDashboardServer webDashboardServer;
 
     @Override
     public void init() throws Exception {
         logger.info("Initializing JVM Studio application...");
         this.appContext = new AppContext();
+
+        try {
+            int port = 8080;
+            this.webDashboardServer = new WebDashboardServer(appContext, port);
+            this.webDashboardServer.start();
+            logger.info("JVM Studio Web Dashboard Server running on http://localhost:{}", port);
+        } catch (Exception e) {
+            logger.warn("Could not start embedded WebDashboardServer on port 8080: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -38,6 +49,11 @@ public class MainApp extends Application {
 
             primaryStage.setOnCloseRequest(event -> {
                 logger.info("Window close requested. Initiating graceful shutdown...");
+                if (webDashboardServer != null) {
+                    try {
+                        webDashboardServer.close();
+                    } catch (Exception ignored) {}
+                }
                 if (appContext != null) {
                     appContext.close();
                 }
@@ -54,6 +70,11 @@ public class MainApp extends Application {
 
     @Override
     public void stop() throws Exception {
+        if (webDashboardServer != null) {
+            try {
+                webDashboardServer.close();
+            } catch (Exception ignored) {}
+        }
         if (appContext != null) {
             appContext.close();
         }
