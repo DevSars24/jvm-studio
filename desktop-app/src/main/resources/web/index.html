@@ -1,22 +1,57 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JVM Studio — Live Task, Telemetry & Architecture Dashboard</title>
+  <title>JVM Studio — White Edition | Interactive Runtime & Architecture Lab</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Chart.js for real-time spline graphs -->
+  <!-- Chart.js for real-time telemetry graphs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-  <!-- GSAP for micro-interactions -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <!-- Monaco Editor Loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+
   <style>
     :root {
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
 
-      /* Clean Human-Crafted Dark SaaS Palette */
+      /* Pristine White Studio Palette (Default) */
+      --bg-page: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-surface-hover: #e2e8f0;
+      --border-subtle: #e2e8f0;
+      --border-focus: #cbd5e1;
+
+      --text-main: #0f172a;
+      --text-muted: #334155;
+      --text-dim: #64748b;
+      --text-faint: #94a3b8;
+
+      --accent-primary: #2563eb;
+      --accent-primary-light: #eff6ff;
+      --accent-green: #059669;
+      --accent-green-light: #ecfdf5;
+      --accent-cyan: #0284c7;
+      --accent-cyan-light: #f0f9ff;
+      --accent-purple: #7c3aed;
+      --accent-purple-light: #f5f3ff;
+      --accent-amber: #d97706;
+      --accent-amber-light: #fffbeb;
+      --accent-rose: #dc2626;
+      --accent-rose-light: #fef2f2;
+
+      --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.03);
+      --shadow-hover: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+    }
+
+    [data-theme="dark"] {
       --bg-page: #0a0c10;
       --bg-sidebar: #0e1017;
       --bg-surface: #131620;
@@ -28,29 +63,23 @@
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
+      --text-faint: #475569;
 
       --accent-primary: #6366f1;
+      --accent-primary-light: rgba(99, 102, 241, 0.15);
       --accent-green: #10b981;
-      --accent-cyan: #0ea5e9;
+      --accent-green-light: rgba(16, 185, 129, 0.15);
+      --accent-cyan: #38bdf8;
+      --accent-cyan-light: rgba(56, 189, 248, 0.15);
+      --accent-purple: #a855f7;
+      --accent-purple-light: rgba(168, 85, 247, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-amber-light: rgba(245, 158, 11, 0.15);
       --accent-rose: #f43f5e;
+      --accent-rose-light: rgba(244, 63, 94, 0.15);
 
-      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-    [data-theme="light"] {
-      --bg-page: #f8fafc;
-      --bg-sidebar: #ffffff;
-      --bg-surface: #ffffff;
-      --bg-surface-elevated: #f1f5f9;
-      --bg-surface-hover: #e2e8f0;
-      --border-subtle: #e2e8f0;
-      --border-focus: #cbd5e1;
-
-      --text-main: #0f172a;
-      --text-muted: #475569;
-      --text-dim: #94a3b8;
-
-      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2);
+      --shadow-hover: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,7 +92,7 @@
       min-height: 100vh;
       overflow-x: hidden;
       line-height: 1.5;
-      transition: background-color 0.2s, color 0.2s;
+      -webkit-font-smoothing: antialiased;
     }
 
     /* Left Sidebar */
@@ -71,46 +100,58 @@
       width: 250px;
       background: var(--bg-sidebar);
       border-right: 1px solid var(--border-subtle);
-      padding: 20px 14px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      flex-shrink: 0;
+      padding: 20px 14px;
       position: sticky;
       top: 0;
       height: 100vh;
-      z-index: 50;
-      flex-shrink: 0;
+      overflow-y: auto;
+      z-index: 100;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
     .brand-wrap {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 6px 12px 6px;
+      padding: 0 8px 18px 8px;
       border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 14px;
     }
 
     .brand-logo {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 16px;
-      letter-spacing: -0.4px;
+      letter-spacing: -0.3px;
       color: var(--text-main);
     }
 
     .brand-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: #181c28;
-      border: 1px solid #282f44;
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent-primary), #60a5fa);
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #818cf8;
-      font-size: 15px;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(37, 99, 235, 0.25);
+    }
+
+    .nav-category {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-faint);
+      padding: 10px 10px 4px 10px;
     }
 
     .nav-list {
@@ -120,16 +161,17 @@
     }
 
     .nav-item {
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-muted);
-      cursor: pointer;
       display: flex;
       align-items: center;
       gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-dim);
+      cursor: pointer;
       transition: all 0.15s ease-in-out;
+      border: 1px solid transparent;
     }
 
     .nav-item:hover {
@@ -138,527 +180,525 @@
     }
 
     .nav-item.active {
-      background: var(--bg-surface-elevated);
-      color: var(--text-main);
-      border: 1px solid var(--border-subtle);
-      font-weight: 600;
+      background: var(--accent-primary-light);
+      color: var(--accent-primary);
+      border-color: rgba(37, 99, 235, 0.15);
+      font-weight: 700;
     }
 
     .sidebar-footer {
       margin-top: auto;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
       padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      background: var(--bg-surface-elevated);
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
     }
 
     .sidebar-footer-title {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 700;
+      color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 6px;
-      color: var(--text-main);
     }
 
     .sidebar-footer-sub {
-      font-size: 10.5px;
+      font-size: 10px;
       color: var(--text-dim);
+      margin-top: 3px;
     }
 
-    /* Main Content Wrapper */
+    /* Main Content */
     .main-wrapper {
       flex: 1;
       display: flex;
       flex-direction: column;
       min-width: 0;
       overflow-y: auto;
+      height: 100vh;
     }
 
-    /* Top Search & Actions Bar */
     .top-bar {
-      padding: 14px 32px;
-      border-bottom: 1px solid var(--border-subtle);
+      height: 60px;
       background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      padding: 0 24px;
       position: sticky;
       top: 0;
-      z-index: 40;
+      z-index: 90;
+      flex-shrink: 0;
     }
 
     .search-box {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: var(--bg-surface);
+      background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
-      padding: 7px 14px;
-      width: 300px;
-      max-width: 100%;
+      padding: 6px 12px;
+      width: 320px;
     }
 
     .search-input {
       background: transparent;
       border: none;
       outline: none;
-      font-family: var(--font-sans);
-      font-size: 12.5px;
       color: var(--text-main);
+      font-size: 12px;
       width: 100%;
+      font-family: inherit;
     }
-    .search-input::placeholder { color: var(--text-dim); }
 
     .top-right-group {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
-    .icon-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-surface);
-      color: var(--text-muted);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      transition: all 0.15s;
-    }
-    .icon-btn:hover { background: var(--bg-surface-elevated); color: var(--text-main); }
-
-    .user-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 3px 10px 3px 3px;
-      border-radius: 20px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-    }
-
-    .user-avatar {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: #181c28;
-      border: 1px solid #282f44;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10.5px;
-      font-weight: 700;
-      color: #818cf8;
-    }
-
-    /* Content Area */
-    .dashboard-content {
-      padding: 28px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      max-width: 1440px;
-      width: 100%;
-      margin: 0 auto;
-    }
-
-    /* Welcome / Hero Banner */
-    .hero-banner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 14px;
-    }
-
-    .hero-title {
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .hero-subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    /* Normal Human Buttons */
-    .btn {
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 12.5px;
-      font-weight: 600;
-      font-family: var(--font-sans);
-      cursor: pointer;
-      border: 1px solid transparent;
+    .badge-status {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      transition: all 0.15s ease-in-out;
-    }
-    .btn:active { transform: scale(0.98); }
-
-    .btn-outline {
-      background: #181c28;
-      color: #cbd5e1;
-      border: 1px solid #282f44;
-    }
-    .btn-outline:hover {
-      background: #202636;
-      border-color: #3b4460;
-      color: #ffffff;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--accent-green-light);
+      color: var(--accent-green);
+      border: 1px solid rgba(5, 150, 105, 0.2);
     }
 
-    .btn-gradient {
-      background: #6366f1;
-      color: #ffffff;
-      border: 1px solid #4f46e5;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-    }
-    .btn-gradient:hover {
-      background: #4f46e5;
-      border-color: #4338ca;
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+      animation: pulse 2s infinite;
     }
 
-    /* Top 4 Metrics Cards */
-    .metrics-quad {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 16px;
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
     }
 
-    .quad-card {
-      background: var(--bg-surface);
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 18px 20px;
+      color: var(--text-main);
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      box-shadow: var(--shadow-card);
-      transition: all 0.15s ease-in-out;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s ease;
     }
 
-    .quad-card:hover {
+    .btn-icon:hover {
+      background: var(--bg-surface-hover);
       border-color: var(--border-focus);
     }
 
-    .quad-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .quad-label {
-      font-size: 11.5px;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    .quad-icon {
-      font-size: 16px;
-      color: var(--accent-primary);
-    }
-
-    .quad-number-row {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-    }
-
-    .quad-value {
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: -0.6px;
-      color: var(--text-main);
-    }
-
-    .quad-pill {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
-    .pill-green { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
-    .pill-purple { background: rgba(99, 102, 241, 0.1); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.2); }
-
-    .quad-bottom-sub {
-      font-size: 11px;
-      color: var(--text-dim);
-    }
-
-    /* Main Center Grid (Spline Chart + Quick Actions) */
-    .center-grid {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 18px;
-    }
-
-    .panel-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: var(--shadow-card);
+    .dashboard-content {
+      padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-    }
-
-    .panel-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-    }
-
-    .panel-title {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-    }
-
-    .panel-sub {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .chart-legend-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .legend-dot-purple { width: 7px; height: 7px; border-radius: 50%; background: #6366f1; }
-    .legend-dot-green { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
-
-    .chart-container-box {
-      width: 100%;
-      height: 240px;
-      position: relative;
-    }
-
-    /* Quick Actions Column */
-    .quick-action-card {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: all 0.15s;
-    }
-    .quick-action-card:hover { border-color: var(--border-focus); }
-
-    .quick-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .quick-badge-title {
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .quick-score-badge {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #818cf8;
-    }
-
-    .quick-desc {
-      font-size: 11.5px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* Bottom Split Grid: Recent Tasks & Java vs C++ Matrix */
-    .bottom-split-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-    }
-
-    /* Dynamic Tasks Entry */
-    .recent-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: 6px;
-      gap: 10px;
-    }
-
-    .recent-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .recent-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-      background: #1e2436;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      color: #818cf8;
-      flex-shrink: 0;
-    }
-
-    .recent-text { min-width: 0; }
-    .recent-name { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .recent-sub { font-size: 11px; color: var(--text-dim); }
-
-    .badge-state {
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 10.5px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .badge-running { background: rgba(99, 102, 241, 0.12); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.25); }
-    .badge-ready { background: #1a1e2b; color: #64748b; border: 1px solid #232839; }
-    .badge-completed { background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); }
-
-    /* Java vs C++ Deep Architectural Matrix */
-    .matrix-tabs {
-      display: flex;
-      gap: 6px;
-      border-bottom: 1px solid var(--border-subtle);
-      padding-bottom: 8px;
-      overflow-x: auto;
-    }
-
-    .matrix-tab {
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .matrix-tab:hover { color: var(--text-main); background: var(--bg-surface-elevated); }
-    .matrix-tab.active { background: #6366f1; color: #fff; }
-
-    .matrix-content-pane {
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .matrix-content-pane.active { display: flex; }
-
-    .compare-boxes {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .box-jvm {
-      background: #111522;
-      border: 1px solid #1e2438;
-      border-radius: 10px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .box-cpp {
-      background: #121620;
-      border: 1px solid #1e2634;
-      border-radius: 10px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .box-tag {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-    .box-jvm .box-tag { color: #818cf8; }
-    .box-cpp .box-tag { color: #38bdf8; }
-
-    .box-desc {
-      font-size: 12px;
-      color: #94a3b8;
-      line-height: 1.5;
-    }
-
-    .box-code {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      background: #090b10;
-      border: 1px solid #1a1e2b;
-      padding: 8px 10px;
-      border-radius: 6px;
-      color: #cbd5e1;
-      overflow-x: auto;
+      gap: 24px;
+      flex: 1;
     }
 
     /* Screen Views */
     .screen-view { display: none; flex-direction: column; gap: 24px; }
     .screen-view.active { display: flex; }
 
-    /* Tables */
-    .table-box {
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-      background: var(--bg-surface);
-      overflow-x: auto;
+    /* Welcome Hero Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    [data-theme="dark"] .hero-banner {
+      background: linear-gradient(135deg, #131620 0%, #1e1b4b 100%);
+      border-color: #312e81;
+    }
+
+    .hero-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: var(--accent-primary);
+      color: #fff;
+    }
+
+    .hero-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.4px;
+    }
+
+    .hero-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 860px;
+      line-height: 1.6;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border-color: var(--border-subtle);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-focus);
+    }
+
+    .btn-warning {
+      background: var(--accent-amber);
+      color: #ffffff;
+    }
+    .btn-warning:hover {
+      background: #b45309;
+    }
+
+    .btn-danger {
+      background: var(--accent-rose);
+      color: #ffffff;
+    }
+
+    /* KPI Quad Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .kpi-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: var(--shadow-card);
+      transition: all 0.15s ease;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--border-focus);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-icon {
+      font-size: 16px;
+    }
+
+    .kpi-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.6px;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Why Build Byte-by-Byte Section */
+    .why-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section-header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .section-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+    }
+
+    .section-sub {
+      font-size: 12.5px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .pillar-card {
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pillar-card.p-blue { background: var(--accent-primary-light); border-color: rgba(37, 99, 235, 0.2); }
+    .pillar-card.p-purple { background: var(--accent-purple-light); border-color: rgba(124, 58, 237, 0.2); }
+    .pillar-card.p-green { background: var(--accent-green-light); border-color: rgba(5, 150, 105, 0.2); }
+    .pillar-card.p-amber { background: var(--accent-amber-light); border-color: rgba(217, 119, 6, 0.2); }
+    .pillar-card.p-cyan { background: var(--accent-cyan-light); border-color: rgba(2, 132, 199, 0.2); }
+
+    .pillar-title {
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .p-blue .pillar-title { color: var(--accent-primary); }
+    .p-purple .pillar-title { color: var(--accent-purple); }
+    .p-green .pillar-title { color: var(--accent-green); }
+    .p-amber .pillar-title { color: var(--accent-amber); }
+    .p-cyan .pillar-title { color: var(--accent-cyan); }
+
+    .pillar-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Spline Chart + Quick Panel */
+    .center-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 18px;
+    }
+
+    .panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Monaco & Bytecode Studio Styles */
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      min-height: 520px;
+    }
+
+    .editor-box {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .editor-header {
+      padding: 10px 16px;
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+
+    #monaco-editor-target {
+      height: 340px;
+      width: 100%;
+    }
+
+    .terminal-box {
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-page);
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      height: 140px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      color: var(--text-main);
+    }
+
+    /* Disassembled Opcode List */
+    .opcode-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 180px;
+      overflow-y: auto;
+      background: var(--bg-page);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .opcode-item {
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+    }
+
+    .opcode-item.active {
+      background: var(--accent-primary-light);
+      color: var(--accent-primary);
+      font-weight: 700;
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    /* Operand Stack Simulator */
+    .stack-sim-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stack-container {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 4px;
+      min-height: 100px;
+      max-height: 120px;
+      overflow-y: auto;
+      border: 1px solid var(--border-subtle);
+      border-bottom: 3px solid var(--accent-primary);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      background: var(--bg-page);
+    }
+
+    .stack-block {
+      background: var(--accent-primary-light);
+      color: var(--accent-primary);
+      border: 1px solid rgba(37, 99, 235, 0.3);
+      padding: 4px;
+      border-radius: 4px;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      animation: pushSlide 0.2s ease-out;
+    }
+
+    @keyframes pushSlide {
+      from { transform: translateY(-8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .vars-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .vars-table th { padding: 4px 6px; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--border-subtle); }
+    .vars-table td { padding: 4px 6px; border-bottom: 1px solid var(--border-subtle); }
+
+    /* Tables */
+    .table-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      box-shadow: var(--shadow-card);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     th {
       text-align: left;
-      padding: 12px 16px;
+      padding: 10px 14px;
       background: var(--bg-surface-elevated);
       color: var(--text-dim);
       font-size: 11px;
@@ -668,53 +708,61 @@
       border-bottom: 1px solid var(--border-subtle);
     }
     td {
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-bottom: 1px solid var(--border-subtle);
       color: var(--text-main);
     }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--bg-surface-hover); }
+    tr:hover td { background: var(--bg-surface-elevated); }
 
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .center-grid { grid-template-columns: 1fr; }
-      .bottom-split-grid { grid-template-columns: 1fr; }
+    .badge-state {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
     }
-
-    @media (max-width: 768px) {
-      body { flex-direction: column; }
-      .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border-subtle); }
-      .top-bar { padding: 12px 16px; flex-wrap: wrap; }
-      .search-box { width: 100%; order: 3; }
-      .dashboard-content { padding: 20px 16px; }
-      .compare-boxes { grid-template-columns: 1fr; }
-    }
+    .badge-ready { background: #f1f5f9; color: #475569; }
+    .badge-running { background: var(--accent-primary-light); color: var(--accent-primary); }
+    .badge-completed { background: var(--accent-green-light); color: var(--accent-green); }
+    .badge-paused { background: var(--accent-amber-light); color: var(--accent-amber); }
+    .badge-failed { background: var(--accent-rose-light); color: var(--accent-rose); }
   </style>
 </head>
 <body>
 
-  <!-- Left Sidebar (Exact layout as screenshot) -->
+  <!-- Left Sidebar Navigation -->
   <aside class="sidebar">
     <div class="brand-wrap">
       <div class="brand-logo">
         <div class="brand-icon">⚡</div>
         <span>JVM Studio</span>
       </div>
-      <span style="font-size:12px; color:var(--text-dim); cursor:pointer;">◫</span>
+      <span style="font-size:11px; color:var(--accent-primary); font-weight:700;">WHITE ED.</span>
     </div>
 
+    <div class="nav-category">Main Overview</div>
     <nav class="nav-list">
-      <div class="nav-item active" onclick="switchNav('dashboard')">
-        <span>🎛️</span> Dashboard
+      <div class="nav-item active" onclick="switchNav('landing')">
+        <span>🏛️</span> Overview & Why Byte
+      </div>
+      <div class="nav-item" onclick="switchNav('bytecode-studio')">
+        <span>⚡</span> Monaco Bytecode Studio
+      </div>
+    </nav>
+
+    <div class="nav-category">Decoupled Architecture</div>
+    <nav class="nav-list">
+      <div class="nav-item" onclick="switchNav('classloader')">
+        <span>🧩</span> ClassLoader Subsystem
+      </div>
+      <div class="nav-item" onclick="switchNav('memory')">
+        <span>🧠</span> Memory Anatomy & GC
+      </div>
+      <div class="nav-item" onclick="switchNav('jit')">
+        <span>🚀</span> HotSpot JIT Engine
       </div>
       <div class="nav-item" onclick="switchNav('tasks')">
-        <span>⚙️</span> Task Engine
-      </div>
-      <div class="nav-item" onclick="switchNav('plugins')">
-        <span>🔌</span> Dynamic Plugins
-      </div>
-      <div class="nav-item" onclick="switchNav('telemetry')">
-        <span>📈</span> JVM Telemetry
+        <span>⚙️</span> Task Orchestrator
       </div>
       <div class="nav-item" onclick="switchNav('lab')">
         <span>🔬</span> Java vs C++ Matrix
@@ -723,451 +771,547 @@
         <span>📜</span> Execution History
       </div>
       <div class="nav-item" onclick="switchNav('settings')">
-        <span>🛠️</span> Settings & DB
+        <span>🛠️</span> System Settings
       </div>
     </nav>
 
     <div class="sidebar-footer">
       <div class="sidebar-footer-title">
-        <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent-green); box-shadow:0 0 8px var(--accent-green);"></span>
-        <span id="side-java">Java 21 LTS</span>
+        <span class="pulse-dot"></span>
+        <span>Java 21 LTS</span>
       </div>
-      <div class="sidebar-footer-sub" id="side-jvm">Oracle HotSpot 64-Bit</div>
-      <div class="sidebar-footer-sub" id="side-db">SQLite WAL Persistence</div>
+      <div class="sidebar-footer-sub">Oracle HotSpot 64-Bit VM</div>
+      <div class="sidebar-footer-sub">SQLite WAL Persistence</div>
     </div>
   </aside>
 
-  <!-- Main Content Wrapper -->
+  <!-- Main Application Wrapper -->
   <div class="main-wrapper">
 
-    <!-- Top Bar with Real Search & Actions -->
+    <!-- Top Bar -->
     <header class="top-bar">
       <div class="search-box">
         <span>🔍</span>
-        <input type="text" class="search-input" id="search-bar" placeholder="Search tasks, execution IDs, metrics..." oninput="handleSearch(this.value)">
+        <input type="text" class="search-input" id="search-bar" placeholder="Search bytecode, tasks, telemetry..." oninput="handleSearch(this.value)">
       </div>
 
       <div class="top-right-group">
-        <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme" id="btn-theme">🌙</button>
-        <button class="icon-btn" onclick="requestGc()" title="Trigger Garbage Collection">🧹</button>
-        
-        <div class="user-chip">
-          <div class="user-avatar">JVM</div>
-          <div>
-            <div style="font-size:12px; font-weight:800; line-height:1.2;">HotSpot Core</div>
-            <div style="font-size:10px; color:var(--text-dim);" id="top-status">Active • 60s Uptime</div>
-          </div>
-        </div>
+        <span class="badge-status">
+          <span class="pulse-dot"></span>
+          Engine: Active
+        </span>
+
+        <button class="btn btn-warning" style="padding:5px 12px; font-size:11px;" onclick="requestGc()">
+          Request GC
+        </button>
+
+        <button class="btn-icon" id="btn-theme" title="Toggle Theme" onclick="toggleTheme()">
+          ☀️
+        </button>
       </div>
     </header>
 
-    <!-- Content Views -->
+    <!-- Main Content Container -->
     <main class="dashboard-content">
 
-      <!-- ================= 1. DASHBOARD VIEW (MATCHES SCREENSHOT) ================= -->
-      <section id="view-dashboard" class="screen-view active">
+      <!-- ========================================== -->
+      <!-- 1. LANDING & "WHY BUILD BYTE-BY-BYTE" VIEW -->
+      <!-- ========================================== -->
+      <section id="screen-landing" class="screen-view active">
         
-        <!-- Welcome Hero -->
+        <!-- Hero Banner -->
         <div class="hero-banner">
-          <div>
-            <h1 class="hero-title">Welcome to JVM Studio 🚀</h1>
-            <p class="hero-subtitle">Real-time HotSpot telemetry, background workers, and architecture comparison.</p>
+          <div class="hero-badge-row">
+            <span class="hero-pill">PROJECT INTRODUCTION</span>
+            <span style="font-size:12px; color:var(--text-dim); font-weight:600;">Welcome to JVM Studio — High-Performance Educational Architecture</span>
           </div>
-          <div class="hero-actions">
-            <button class="btn btn-outline" onclick="switchNav('lab')">
-              <span>🔬</span> Architecture Map
+          <h1 class="hero-title">Mastering Java from Source Code to Native Machine Cycles</h1>
+          <p class="hero-desc">
+            JVM Studio opens the "black box" of the Java Virtual Machine. While surface tutorials treat Java as a syntax layer, 
+            JVM Studio lets you explore and play with the real runtime mechanisms: dynamic bytecode compilation, ClassLoader security sandboxing, 
+            Operand Stack push/pop simulation, JIT tiered optimization, and concurrent thread-safe task orchestration.
+          </p>
+          <div class="hero-cta-row">
+            <button class="btn btn-primary" onclick="switchNav('bytecode-studio')">
+              Launch Monaco Bytecode Studio &rarr;
             </button>
-            <button class="btn btn-gradient" onclick="requestGc()">
-              <span>🧹</span> Trigger System.gc()
+            <button class="btn btn-secondary" onclick="switchNav('classloader')">
+              Explore ClassLoader Hierarchy
+            </button>
+            <button class="btn btn-secondary" onclick="switchNav('lab')">
+              Java vs C++ Deep Showdown
             </button>
           </div>
         </div>
 
-        <!-- 4 Top Metric Cards (Matches Screenshot Exactly) -->
-        <div class="metrics-quad">
-          <!-- Card 1 -->
-          <div class="quad-card">
-            <div class="quad-top">
-              <span class="quad-label">Total Tasks Executed</span>
-              <span class="quad-icon">📋</span>
+        <!-- KPI Quad Row -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Active Workers</span>
+              <span class="kpi-icon">🧵</span>
             </div>
-            <div class="quad-number-row">
-              <span class="quad-value" id="card-total-tasks">0</span>
-              <span class="quad-pill pill-purple">↑ Live Active</span>
-            </div>
-            <div class="quad-bottom-sub">Executed across workers</div>
+            <div class="kpi-val" id="val-workers">0</div>
+            <div class="kpi-sub">ThreadPoolExecutor bounded threads</div>
           </div>
 
-          <!-- Card 2 -->
-          <div class="quad-card">
-            <div class="quad-top">
-              <span class="quad-label">Heap Memory Used</span>
-              <span class="quad-icon">🟣</span>
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Heap Memory Used</span>
+              <span class="kpi-icon">📊</span>
             </div>
-            <div class="quad-number-row">
-              <span class="quad-value" id="card-heap-used">0 MB</span>
-              <span class="quad-pill pill-green" id="card-heap-pct">0%</span>
-            </div>
-            <div class="quad-bottom-sub" id="card-heap-comm">Committed: 0 MB</div>
+            <div class="kpi-val" id="val-heap">0 MB</div>
+            <div class="kpi-sub" id="sub-heap">Max: ~2048 MB</div>
           </div>
 
-          <!-- Card 3 -->
-          <div class="quad-card">
-            <div class="quad-top">
-              <span class="quad-label">Platform Threads</span>
-              <span class="quad-icon">📈</span>
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Registered Tasks</span>
+              <span class="kpi-icon">🧩</span>
             </div>
-            <div class="quad-number-row">
-              <span class="quad-value" id="card-live-threads">0</span>
-              <span class="quad-pill pill-green" id="card-peak-threads">Peak 0</span>
-            </div>
-            <div class="quad-bottom-sub">Active JVM platform threads</div>
+            <div class="kpi-val" id="val-tasks">4</div>
+            <div class="kpi-sub">Built-in + Dynamic Plugins</div>
           </div>
 
-          <!-- Card 4 -->
-          <div class="quad-card">
-            <div class="quad-top">
-              <span class="quad-label">GC Total Pause</span>
-              <span class="quad-icon">⏱️</span>
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Garbage Collections</span>
+              <span class="kpi-icon">♻️</span>
             </div>
-            <div class="quad-number-row">
-              <span class="quad-value" id="card-gc-time">0 ms</span>
-              <span class="quad-pill pill-purple" id="card-gc-count">0 GCs</span>
-            </div>
-            <div class="quad-bottom-sub">Generational GC cycles</div>
+            <div class="kpi-val" id="val-gc">0</div>
+            <div class="kpi-sub" id="sub-gc">Total GC Pause Time: 0 ms</div>
           </div>
         </div>
 
-        <!-- Middle Center Grid: Dual-Spline Real Chart & Quick Actions -->
+        <!-- "Why Build Byte-by-Byte?" Pillars Section -->
+        <div class="why-section">
+          <div class="section-header">
+            <h2 class="section-title">Why Build Byte-by-Byte? — The Architectural Importance of Java</h2>
+            <p class="section-sub">
+              Over 60 billion JVM instances power global banking, cloud backends, and big data systems (Kafka, Spark). 
+              Understanding how Java executes byte-by-byte bridges the gap between writing code and building microsecond-latency, resilient software.
+            </p>
+          </div>
+
+          <div class="pillars-grid">
+            <div class="pillar-card p-blue">
+              <div class="pillar-title">1. The Bytecode Contract (0xCAFEBABE)</div>
+              <div class="pillar-desc">
+                Java compiles into an instruction set for an abstract stack machine. The Constant Pool acts as a dynamic link table, allowing compiled bytecode to run unchanged across x86, ARM64, and RISC-V without recompilation.
+              </div>
+            </div>
+
+            <div class="pillar-card p-purple">
+              <div class="pillar-title">2. ClassLoader Sandboxing & Verification</div>
+              <div class="pillar-desc">
+                Before execution, the Verifier proves that bytecode never underflows/overflows the Operand Stack or conducts illegal pointer forging. ClassLoaders isolate plugin versions and protect core runtime classes.
+              </div>
+            </div>
+
+            <div class="pillar-card p-green">
+              <div class="pillar-title">3. Runtime Data Areas (Stack vs Heap)</div>
+              <div class="pillar-desc">
+                Stack Frames execute in nanoseconds on thread-private stacks (Local Variables + Operand Stack). Managed Heap allocates objects via TLABs (Thread-Local Allocation Buffers) with zero lock contention.
+              </div>
+            </div>
+
+            <div class="pillar-card p-amber">
+              <div class="pillar-title">4. HotSpot Adaptive JIT Compilation</div>
+              <div class="pillar-desc">
+                Instant startup via Tier 0 Interpreter combines with peak C++ speed via Tier 4 C2 Server compiler. Dynamic runtime profiling enables method inlining, loop unrolling, and On-Stack Replacement (OSR).
+              </div>
+            </div>
+
+            <div class="pillar-card p-cyan">
+              <div class="pillar-title">5. Memory Safety & Generational GC</div>
+              <div class="pillar-desc">
+                Eliminates manual memory management bugs (dangling pointers, double-frees, buffer overflows) responsible for 70% of critical CVEs. High-throughput generational collectors keep enterprise software stable.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Telemetry Spline Chart + Quick Controls -->
         <div class="center-grid">
-          <!-- Left: Real Dual-Spline Chart (Matches 'Grammar Score Trends' in screenshot) -->
           <div class="panel-card">
-            <div class="panel-header">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <div class="panel-title">JVM Heap Allocation & Memory Dynamics</div>
-                <div class="panel-sub">Real-time HotSpot heap monitoring sampled every 1.5s</div>
+                <h3 style="font-size:14px; font-weight:700;">Live JVM Heap Telemetry</h3>
+                <span style="font-size:11px; color:var(--text-dim);">Real-time memory allocation sampling from MemoryMXBean</span>
               </div>
-              <div class="chart-legend-wrap">
-                <div class="legend-item"><span class="legend-dot-purple"></span> Used Heap (MB)</div>
-                <div class="legend-item"><span class="legend-dot-green"></span> Committed Heap (MB)</div>
-              </div>
+              <span style="font-size:11px; font-weight:700; color:var(--accent-primary);" id="chart-live-val">0 MB</span>
             </div>
-            <div class="chart-container-box">
-              <canvas id="jvmSplineChart"></canvas>
+            <div style="height:220px; position:relative;">
+              <canvas id="liveHeapChart"></canvas>
             </div>
           </div>
 
-          <!-- Right: Quick Actions Column -->
-          <div class="panel-card" style="gap:14px;">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Quick Actions</div>
-                <div class="panel-sub">Interactive JVM & Plugin Controls</div>
-              </div>
-              <span style="font-size:14px; color:var(--text-dim);">⋮</span>
+          <div class="panel-card">
+            <div>
+              <h3 style="font-size:14px; font-weight:700;">Interactive Memory Lab</h3>
+              <span style="font-size:11px; color:var(--text-dim);">Allocate real heap chunks and inspect GC reclamation</span>
             </div>
 
-            <!-- Quick Action 1: Heap Allocation Lab -->
-            <div class="quick-action-card">
-              <div class="quick-top">
-                <span class="quick-badge-title">
-                  <span style="color:var(--accent-purple);">📦</span> Heap Chunk Tester
-                </span>
-                <span class="quick-score-badge" id="qa-alloc-mb">0 MB</span>
-              </div>
-              <p class="quick-desc">Allocate real 20 MB memory chunks into Eden space and release references.</p>
-              <div style="display:flex; gap:8px; margin-top:4px;">
-                <button class="btn btn-gradient" style="padding:6px 14px; font-size:12px;" onclick="allocChunk()">+20 MB</button>
-                <button class="btn btn-outline" style="padding:6px 14px; font-size:12px;" onclick="freeChunks()">Release</button>
-              </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button class="btn btn-primary" onclick="allocChunk()">
+                + Allocate 20 MB Heap Block
+              </button>
+              <button class="btn btn-secondary" onclick="freeChunks()">
+                Release References (Make Eligible for GC)
+              </button>
+              <button class="btn btn-warning" onclick="requestGc()">
+                Dispatch System.gc()
+              </button>
             </div>
 
-            <!-- Quick Action 2: Dynamic Plugin Hot-Load -->
-            <div class="quick-action-card">
-              <div class="quick-top">
-                <span class="quick-badge-title">
-                  <span style="color:var(--accent-green);">🔌</span> Dynamic Plugin
-                </span>
-                <span class="badge-state badge-ready" id="qa-plugin-badge">NOT LOADED</span>
-              </div>
-              <p class="quick-desc">Hot-load <code>sample-plugin-1.0.0.jar</code> into an isolated <code>URLClassLoader</code>.</p>
-              <div style="margin-top:4px;">
-                <button class="btn btn-outline" style="width:100%; justify-content:center; padding:6px 14px; font-size:12px;" onclick="loadSamplePlugin()">
-                  Hot-Load Sample JAR
-                </button>
-              </div>
+            <div style="font-size:11px; color:var(--text-dim); background:var(--bg-page); padding:10px; border-radius:8px; border:1px solid var(--border-subtle);">
+              <strong>Observation:</strong> Allocating chunks creates live GC roots in Eden space. Releasing references clears GC roots, but physical reclamation occurs only when the Garbage Collector sweeps.
             </div>
           </div>
         </div>
 
-        <!-- Bottom Split Grid: Recent Tasks & Java vs C++ Matrix -->
-        <div class="bottom-split-grid">
-          
-          <!-- Recent Tasks / Documents -->
-          <div class="panel-card">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Task Execution Status</div>
-                <div class="panel-sub">Real background workers with cooperative checkpoints</div>
-              </div>
-              <button class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="switchNav('tasks')">View All →</button>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 2. DECOUPLED: MONACO BYTECODE STUDIO VIEW  -->
+      <!-- ========================================== -->
+      <section id="screen-bytecode-studio" class="screen-view">
+        <div class="panel-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 style="font-size:18px; font-weight:800;">Decoupled Monaco Bytecode & Operand Stack Studio</h2>
+              <p style="font-size:12px; color:var(--text-dim);">Write or edit Java code in real-time. Watch how HotSpot executes opcodes, pushes/pops the Operand Stack, and triggers JIT compilation.</p>
             </div>
-            <div id="dashboard-tasks-list"></div>
+
+            <div style="display:flex; gap:10px; align-items:center;">
+              <select id="preset-selector" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--bg-surface); font-size:12px; font-weight:600; color:var(--text-main);" onchange="loadEditorPreset(this.value)">
+                <option value="arithmetic">1. Primitive Arithmetic & Operand Stack</option>
+                <option value="objects">2. Object Allocation & String Pool</option>
+                <option value="method">3. Method Call & Stack Frame Recursion</option>
+                <option value="loop">4. Loop & HotSpot JIT Counter</option>
+                <option value="polymorphism">5. Interface Polymorphic Dispatch</option>
+              </select>
+
+              <button class="btn btn-primary" onclick="runStudioPipeline()">
+                Run & Dissect JVM Flow
+              </button>
+              <button class="btn btn-secondary" onclick="stepOpcode()">
+                Step Opcode
+              </button>
+              <button class="btn btn-secondary" onclick="resetStudio()">
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-layout">
+          <!-- Left: Monaco Editor + Console -->
+          <div class="editor-box">
+            <div class="editor-header">
+              <span>Java Source Code (Editable)</span>
+              <span style="color:var(--accent-primary);">Main.java</span>
+            </div>
+            <div id="monaco-editor-target"></div>
+            <div class="terminal-box" id="studio-terminal">Ready. Click 'Run & Dissect JVM Flow' to compile, disassemble, and step through execution.</div>
           </div>
 
-          <!-- Java vs C++ Deep Architectural Matrix -->
-          <div class="panel-card">
-            <div class="panel-header">
+          <!-- Right: Bytecode Opcodes + Stack Simulator -->
+          <div class="editor-box" style="padding:16px; gap:14px;">
+            <div>
+              <h3 style="font-size:13px; font-weight:700;">Disassembled Bytecode Opcodes (javap)</h3>
+              <span style="font-size:11px; color:var(--text-dim);">Exact instruction sequence executing against the virtual machine:</span>
+            </div>
+            <div class="opcode-list" id="studio-opcode-container"></div>
+
+            <div class="stack-sim-grid">
               <div>
-                <div class="panel-title">Java vs C++ Architectural Matrix</div>
-                <div class="panel-sub">Real side-by-side engineering comparison</div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                  <span style="font-size:11px; font-weight:700; color:var(--text-dim);">Operand Stack (LIFO)</span>
+                  <span style="font-size:10px; font-weight:700; color:var(--accent-primary);" id="studio-stack-depth">Depth: 0</span>
+                </div>
+                <div class="stack-container" id="studio-stack-view">
+                  <div style="text-align:center; font-size:11px; color:var(--text-faint); margin:auto;">(Empty Stack)</div>
+                </div>
               </div>
-              <button class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="switchNav('lab')">Full Map →</button>
-            </div>
 
-            <!-- Matrix Tabs -->
-            <div class="matrix-tabs">
-              <div class="matrix-tab active" onclick="switchMatrixTab('loading')">ClassLoading vs dlopen</div>
-              <div class="matrix-tab" onclick="switchMatrixTab('memory')">GC vs RAII</div>
-              <div class="matrix-tab" onclick="switchMatrixTab('reflection')">Reflection vs RTTI</div>
-              <div class="matrix-tab" onclick="switchMatrixTab('portability')">Bytecode vs Native</div>
-            </div>
-
-            <!-- Tab 1: Class Loading -->
-            <div id="matrix-loading" class="matrix-content-pane active">
-              <div class="compare-boxes">
-                <div class="box-jvm">
-                  <span class="box-tag">Java URLClassLoader</span>
-                  <p class="box-desc">Bytecode is dynamically verified and loaded into Metaspace at runtime with full namespace isolation.</p>
-                  <div class="box-code">new URLClassLoader(urls).loadClass(name);</div>
-                </div>
-                <div class="box-cpp">
-                  <span class="box-tag">C++ dlopen / LoadLibrary</span>
-                  <p class="box-desc">Fragile C++ ABI across compilers; requires <code>extern "C"</code> wrappers to prevent mangling errors.</p>
-                  <div class="box-code">void* h = dlopen("lib.so", RTLD_NOW);</div>
-                </div>
+              <div>
+                <span style="font-size:11px; font-weight:700; color:var(--text-dim); display:block; margin-bottom:4px;">Local Variable Array</span>
+                <table class="vars-table">
+                  <thead>
+                    <tr><th>Slot</th><th>Name</th><th>Value</th></tr>
+                  </thead>
+                  <tbody id="studio-vars-body">
+                    <tr><td>0</td><td>args</td><td>String[0]</td></tr>
+                    <tr><td>1</td><td>var_1</td><td>--</td></tr>
+                    <tr><td>2</td><td>var_2</td><td>--</td></tr>
+                    <tr><td>3</td><td>sum</td><td>--</td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <!-- Tab 2: Memory Management -->
-            <div id="matrix-memory" class="matrix-content-pane">
-              <div class="compare-boxes">
-                <div class="box-jvm">
-                  <span class="box-tag">Java Generational GC</span>
-                  <p class="box-desc">Generational collectors (G1, ZGC) eliminate dangling pointers and double-free bugs automatically.</p>
-                  <div class="box-code">try (var res = open()) { ... } // AutoCloseable</div>
-                </div>
-                <div class="box-cpp">
-                  <span class="box-tag">C++ RAII / Smart Pointers</span>
-                  <p class="box-desc">Deterministic destructors run at scope exit with zero GC pause time overhead.</p>
-                  <div class="box-code">auto ptr = std::make_unique&lt;Resource&gt;();</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tab 3: Reflection -->
-            <div id="matrix-reflection" class="matrix-content-pane">
-              <div class="compare-boxes">
-                <div class="box-jvm">
-                  <span class="box-tag">Java java.lang.reflect</span>
-                  <p class="box-desc">Full reflection on fields, methods, constructors, and runtime annotations (<code>@TaskInfo</code>).</p>
-                  <div class="box-code">clazz.getDeclaredMethods();</div>
-                </div>
-                <div class="box-cpp">
-                  <span class="box-tag">C++ typeid / RTTI</span>
-                  <p class="box-desc">Limited to class identity checking; lacks member and constructor introspection without Qt MOC.</p>
-                  <div class="box-code">typeid(obj).name(); // dynamic_cast</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tab 4: Portability -->
-            <div id="matrix-portability" class="matrix-content-pane">
-              <div class="compare-boxes">
-                <div class="box-jvm">
-                  <span class="box-tag">Java Bytecode + JIT</span>
-                  <p class="box-desc">Single JAR runs on Windows, macOS, and Linux; HotSpot C1/C2 compiles hot loops into native assembly.</p>
-                  <div class="box-code">javac File.java -> java File (Cross-platform)</div>
-                </div>
-                <div class="box-cpp">
-                  <span class="box-tag">C++ Native Machine Code</span>
-                  <p class="box-desc">Compiles directly into CPU architecture binaries (x86_64, ARM64); zero VM startup overhead.</p>
-                  <div class="box-code">clang++ -O3 main.cpp -o main (OS-dependent)</div>
-                </div>
-              </div>
+            <div style="background:var(--bg-page); padding:10px; border-radius:8px; border:1px solid var(--border-subtle); font-size:11px; color:var(--text-dim);">
+              <strong>Execution Engine Status:</strong> <span id="studio-jit-tier" style="color:var(--accent-primary); font-weight:700;">Tier 0 (Interpreter)</span> | Magic: <code>0xCAFEBABE</code> | Major Version: 65 (Java 21)
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ================= 2. TASK ENGINE VIEW ================= -->
-      <section id="view-tasks" class="screen-view">
+
+      <!-- ========================================== -->
+      <!-- 3. DECOUPLED: CLASSLOADER SUBSYSTEM        -->
+      <!-- ========================================== -->
+      <section id="screen-classloader" class="screen-view">
         <div class="panel-card">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Task Orchestration Hub</div>
-              <div class="panel-sub">Manage concurrent tasks with cooperative cancel and pause/resume checkpoints</div>
+          <h2 style="font-size:18px; font-weight:800;">Decoupled ClassLoader Subsystem & Security Verifier</h2>
+          <p style="font-size:12.5px; color:var(--text-dim);">
+            How the JVM dynamically discovers, loads, verifies, and links classes into Metaspace without stopping the process.
+          </p>
+
+          <div class="pillars-grid" style="margin-top:8px;">
+            <div class="pillar-card p-blue">
+              <div class="pillar-title">1. Loading & Delegation Model</div>
+              <div class="pillar-desc">
+                Parent-first delegation: <code>BootstrapClassLoader</code> (Core runtime) &rarr; <code>PlatformClassLoader</code> (Extensions) &rarr; <code>AppClassLoader</code> (Classpath) &rarr; Child <code>URLClassLoader</code>.
+              </div>
+            </div>
+
+            <div class="pillar-card p-purple">
+              <div class="pillar-title">2. Bytecode Verification (Security)</div>
+              <div class="pillar-desc">
+                Verifies magic number <code>0xCAFEBABE</code>, checks that instructions cannot overflow or underflow stack limits, and guarantees that variables are never used before initialization.
+              </div>
+            </div>
+
+            <div class="pillar-card p-green">
+              <div class="pillar-title">3. Preparation & Resolution</div>
+              <div class="pillar-desc">
+                Preparation allocates memory for static fields and initializes them to default zeros. Resolution turns symbolic references into direct memory pointers.
+              </div>
             </div>
           </div>
-          <div id="all-tasks-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:18px;"></div>
-        </div>
-      </section>
 
-      <!-- ================= 3. DYNAMIC PLUGINS VIEW ================= -->
-      <section id="view-plugins" class="screen-view">
-        <div class="panel-card">
-          <div class="panel-header">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; background:var(--bg-page); padding:14px; border-radius:10px; border:1px solid var(--border-subtle);">
             <div>
-              <div class="panel-title">Dynamic Bytecode Plugin Hub</div>
-              <div class="panel-sub">Hot-loads external JAR files dynamically using custom <code>URLClassLoader</code> and <code>ServiceLoader</code></div>
+              <div style="font-weight:700; font-size:13px;">Dynamic External Plugin Test Bench</div>
+              <div style="font-size:11.5px; color:var(--text-dim);">Hot-load sample plugin JAR at runtime via custom URLClassLoader</div>
             </div>
-            <button class="btn btn-gradient" onclick="loadSamplePlugin()">
-              <span>📦</span> Hot-Load Sample Plugin JAR
+            <button class="btn btn-primary" onclick="loadSamplePlugin()">
+              + Hot-Load Sample Plugin JAR
             </button>
           </div>
-          <div id="plugin-details-container" style="margin-top:14px;">
-            <div style="padding:20px; border-radius:14px; background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); font-size:13.5px;">
-              No dynamic plugin loaded into Metaspace yet. Click "Hot-Load Sample Plugin JAR" to hot-inject <code>sample-plugin-1.0.0.jar</code>.
+
+          <div id="plugin-details-container" style="margin-top:6px;"></div>
+        </div>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 4. DECOUPLED: MEMORY ANATOMY & GC          -->
+      <!-- ========================================== -->
+      <section id="screen-memory" class="screen-view">
+        <div class="panel-card">
+          <h2 style="font-size:18px; font-weight:800;">Decoupled JVM Memory Anatomy & Garbage Collection</h2>
+          <p style="font-size:12.5px; color:var(--text-dim);">Detailed breakdown of Thread-private Stack Memory vs Managed Generational Heap Memory.</p>
+
+          <div class="pillars-grid">
+            <div class="pillar-card p-blue">
+              <div class="pillar-title">JVM Stack (Per-Thread)</div>
+              <div class="pillar-desc">
+                Thread-private memory. Contains Stack Frames allocated upon each method call. Holds Local Variables, Operand Stack, and Frame Return Data. Destroyed automatically when method returns with zero GC overhead.
+              </div>
+            </div>
+
+            <div class="pillar-card p-green">
+              <div class="pillar-title">Young Generation (Eden + S0/S1)</div>
+              <div class="pillar-desc">
+                Where all new objects and arrays are allocated. Ultra-fast nanosecond allocation via Thread-Local Allocation Buffers (TLAB). Minor GCs promote surviving objects to Survivor spaces.
+              </div>
+            </div>
+
+            <div class="pillar-card p-amber">
+              <div class="pillar-title">Tenured (Old) Generation</div>
+              <div class="pillar-desc">
+                Holds long-lived objects that survived multiple GC generational cycles (tenuring threshold). Major/Full GCs sweep and compact this space to prevent heap fragmentation.
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ================= 4. TELEMETRY & GC VIEW ================= -->
-      <section id="view-telemetry" class="screen-view">
+
+      <!-- ========================================== -->
+      <!-- 5. DECOUPLED: HOTSPOT JIT EXECUTION ENGINE -->
+      <!-- ========================================== -->
+      <section id="screen-jit" class="screen-view">
         <div class="panel-card">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">JVM Telemetry & Garbage Collection Lab</div>
-              <div class="panel-sub">Direct observation of memory allocations and collector behavior</div>
+          <h2 style="font-size:18px; font-weight:800;">Decoupled HotSpot JIT Execution Engine (Tiered Compilation)</h2>
+          <p style="font-size:12.5px; color:var(--text-dim);">How Java transitions seamlessly from zero-warmup interpretation to peak native machine execution.</p>
+
+          <div class="pillars-grid">
+            <div class="pillar-card p-blue">
+              <div class="pillar-title">Tier 0: Fast Interpreter</div>
+              <div class="pillar-desc">
+                Zero startup latency. Reads bytecode opcodes and immediately translates them into CPU instructions. Tracks method invocation and loop backedge counters.
+              </div>
             </div>
-            <div style="display:flex; gap:8px;">
-              <button class="btn btn-gradient" onclick="allocChunk()">+20 MB Chunk</button>
-              <button class="btn btn-outline" onclick="freeChunks()">Release References</button>
-              <button class="btn btn-gradient" onclick="requestGc()">Trigger GC</button>
+
+            <div class="pillar-card p-purple">
+              <div class="pillar-title">Tiers 1-3: C1 Client Compiler</div>
+              <div class="pillar-desc">
+                Fast native compilation with simple optimizations. Instruments code to profile branch probabilities and method invocation frequencies.
+              </div>
             </div>
-          </div>
-          <div class="metrics-quad" style="margin-top:10px;">
-            <div class="quad-card">
-              <span class="quad-label">Metaspace / Non-Heap</span>
-              <span class="quad-value" id="tel-nonheap">0 MB</span>
-              <span class="quad-bottom-sub">Class metadata & JIT caches</span>
-            </div>
-            <div class="quad-card">
-              <span class="quad-label">Available Cores</span>
-              <span class="quad-value" id="tel-cores">0</span>
-              <span class="quad-bottom-sub">Hardware CPU processors</span>
-            </div>
-            <div class="quad-card">
-              <span class="quad-label">Process Uptime</span>
-              <span class="quad-value" id="tel-uptime">0s</span>
-              <span class="quad-bottom-sub">Continuous execution</span>
-            </div>
-            <div class="quad-card">
-              <span class="quad-label">Active Worker Tasks</span>
-              <span class="quad-value" id="tel-workers">0</span>
-              <span class="quad-bottom-sub">ThreadPoolExecutor workers</span>
+
+            <div class="pillar-card p-green">
+              <div class="pillar-title">Tier 4: C2 Server JIT Compiler</div>
+              <div class="pillar-desc">
+                Deep aggressive optimization: method inlining, loop unrolling, escape analysis (allocating objects on stack), and On-Stack Replacement (OSR) into native SIMD/AVX assembly.
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ================= 5. COMPLETE JAVA VS C++ MAP VIEW ================= -->
-      <section id="view-lab" class="screen-view">
+
+      <!-- ========================================== -->
+      <!-- 6. DECOUPLED: CONCURRENT TASK ENGINE       -->
+      <!-- ========================================== -->
+      <section id="screen-tasks" class="screen-view">
         <div class="panel-card">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Full Java Runtime vs Native C++ Architectural Map</div>
-              <div class="panel-sub">Comprehensive technical comparison of memory, execution model, reflection, and portability</div>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:18px; margin-top:12px;">
-            <div class="box-jvm" style="padding:20px;">
-              <span class="box-tag" style="font-size:13px;">1. Memory Management & Safety</span>
-              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Automatic Generational GC</h4>
-              <p class="box-desc">HotSpot uses Eden, Survivor, and Tenured generations with compacting collectors (G1, Parallel, ZGC). Prevents dangling pointers, buffer overflows, and memory use-after-free bugs. Requires explicit resource closing for OS handles via <code>AutoCloseable</code>.</p>
-            </div>
-            <div class="box-cpp" style="padding:20px;">
-              <span class="box-tag" style="font-size:13px;">1. C++ Determinism</span>
-              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">RAII & Smart Pointers</h4>
-              <p class="box-desc">Resource Acquisition Is Initialization: memory and OS handles are freed deterministically at scope exit via <code>std::unique_ptr</code> and <code>std::shared_ptr</code>. Zero pause time overhead, but susceptible to dangling pointers or double-free if raw pointers are mismanaged.</p>
-            </div>
-
-            <div class="box-jvm" style="padding:20px;">
-              <span class="box-tag" style="font-size:13px;">2. Dynamic Extensibility</span>
-              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">URLClassLoader & Metaspace</h4>
-              <p class="box-desc">Standardized class file format. Java loads classes dynamically from network or disk, verifies bytecode for stack safety, and isolates plugins via classloader hierarchies.</p>
-            </div>
-            <div class="box-cpp" style="padding:20px;">
-              <span class="box-tag" style="font-size:13px;">2. C++ Shared Libraries</span>
-              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">dlopen & LoadLibrary</h4>
-              <p class="box-desc">Loads shared objects (<code>.so / .dll</code>). Due to compiler-dependent C++ name mangling, dynamic plugin architectures must export functions using C linkage (<code>extern "C"</code>).</p>
-            </div>
-
-            <div class="box-jvm" style="padding:20px;">
-              <span class="box-tag" style="font-size:13px;">3. Introspection & Metadata</span>
-              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Full Reflection & Annotations</h4>
-              <p class="box-desc">Every class retains constant pool metadata. Classes, methods, parameters, and custom runtime annotations (e.g. <code>@TaskInfo</code>) can be discovered and invoked dynamically.</p>
-            </div>
-            <div class="box-cpp" style="padding:20px;">
-              <span class="box-tag" style="font-size:13px;">3. C++ RTTI</span>
-              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Minimal Type Info</h4>
-              <p class="box-desc">C++ provides <code>typeid</code> and <code>dynamic_cast</code> for polymorphic types. Lacks metadata regarding class fields or constructors unless generated via external preprocessors.</p>
-            </div>
-
-            <div class="box-jvm" style="padding:20px;">
-              <span class="box-tag" style="font-size:13px;">4. Portability & Execution</span>
-              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Write Once, Run Anywhere (WORA)</h4>
-              <p class="box-desc">Standard bytecode executes on any compliant JVM. The HotSpot Tiered JIT (C1 Client + C2 Server) profiles running loops and generates optimized native machine instructions at runtime.</p>
-            </div>
-            <div class="box-cpp" style="padding:20px;">
-              <span class="box-tag" style="font-size:13px;">4. Native Compilation</span>
-              <h4 style="margin: 6px 0; font-size:15px; color:var(--text-main);">Direct CPU Binaries</h4>
-              <p class="box-desc">AOT compiled into native instructions for the target instruction set. Maximum speed and minimum startup time, but binaries must be compiled and distributed separately for each platform.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= 6. HISTORY AUDIT VIEW ================= -->
-      <section id="view-history" class="screen-view">
-        <div class="panel-card">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">SQLite WAL Execution Records</div>
-              <div class="panel-sub">Audit trail of all tasks executed by the engine</div>
-            </div>
-            <button class="btn btn-outline" onclick="loadHistory()">Refresh Records</button>
-          </div>
-          <div class="table-box" style="margin-top:12px;">
+          <h2 style="font-size:18px; font-weight:800;">Decoupled Concurrent Task Engine & Orchestrator</h2>
+          <p style="font-size:12.5px; color:var(--text-dim);">Bounded thread pool execution, cooperative interruption, and parameter validation.</p>
+          
+          <div class="table-card">
             <table>
               <thead>
                 <tr>
-                  <th>Exec ID</th>
                   <th>Task Name</th>
                   <th>Category</th>
-                  <th>Outcome</th>
-                  <th>Duration</th>
-                  <th>Items</th>
-                  <th>Summary</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="history-rows"></tbody>
+              <tbody id="all-tasks-rows">
+                <!-- Dynamically populated -->
+              </tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- ================= 7. SETTINGS VIEW ================= -->
-      <section id="view-settings" class="screen-view">
+
+      <!-- ========================================== -->
+      <!-- 7. DECOUPLED: JAVA VS C++ MATRIX           -->
+      <!-- ========================================== -->
+      <section id="screen-lab" class="screen-view">
         <div class="panel-card">
-          <div class="panel-title">Architecture & Database Settings</div>
-          <div style="font-size:13.5px; line-height:2.2; margin-top:10px; color:var(--text-main);">
-            <div><strong>Persistence Engine:</strong> SQLite 3 via JDBC in WAL Mode (Write-Ahead Logging)</div>
-            <div><strong>Database File:</strong> <code>~/.jvmstudio/jvmstudio.db</code></div>
-            <div><strong>Concurrency Pool:</strong> Bounded ThreadPoolExecutor (8 Worker Threads)</div>
-            <div><strong>Garbage Collector:</strong> Generational OpenJDK G1/Parallel Collector</div>
+          <h2 style="font-size:18px; font-weight:800;">Decoupled Architectural Showdown: Java vs C++</h2>
+          <p style="font-size:12.5px; color:var(--text-dim);">Objective, nuanced architectural trade-offs between managed runtime and native binary execution.</p>
+
+          <div class="pillars-grid">
+            <div class="pillar-card p-blue">
+              <div class="pillar-title">1. Dynamic ClassLoading vs Static Linking</div>
+              <div class="pillar-desc">
+                <strong>Java:</strong> Dynamic linking via ClassLoaders. Modules hot-loaded without restarting process.<br>
+                <strong>C++:</strong> Static linking via compile-time linker (or OS dlopen). Maximum startup speed, but changes require full link cycle.
+              </div>
+            </div>
+
+            <div class="pillar-card p-purple">
+              <div class="pillar-title">2. Reflection & Metadata vs Templates/RTTI</div>
+              <div class="pillar-desc">
+                <strong>Java:</strong> Full runtime reflection, annotations, and bytecode generation via ASM/ByteBuddy.<br>
+                <strong>C++:</strong> Compile-time metaprogramming via templates with zero runtime overhead, but minimal runtime reflection.
+              </div>
+            </div>
+
+            <div class="pillar-card p-green">
+              <div class="pillar-title">3. Generational GC vs RAII Manual Memory</div>
+              <div class="pillar-desc">
+                <strong>Java:</strong> Automatic generational GC eliminates memory leaks and dangling pointers.<br>
+                <strong>C++:</strong> Deterministic RAII destructors. Zero GC pause overhead, but potential for manual memory corruption bugs.
+              </div>
+            </div>
+
+            <div class="pillar-card p-amber">
+              <div class="pillar-title">4. Bounded Concurrency vs Raw OS Threads</div>
+              <div class="pillar-desc">
+                <strong>Java:</strong> Built-in <code>java.util.concurrent</code>, ThreadPoolExecutor, and Virtual Threads (Project Loom).<br>
+                <strong>C++:</strong> <code>std::thread</code> with direct OS synchronization primitives (pthreads/Win32).
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 8. DECOUPLED: EXECUTION HISTORY            -->
+      <!-- ========================================== -->
+      <section id="screen-history" class="screen-view">
+        <div class="panel-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 style="font-size:18px; font-weight:800;">Decoupled Execution History & SQLite Audit Log</h2>
+              <p style="font-size:12.5px; color:var(--text-dim);">Persistent execution audits recorded via SQLite WAL engine.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="loadHistory()">
+              Refresh History
+            </button>
+          </div>
+
+          <div class="table-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Execution ID</th>
+                  <th>Task Name</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Duration</th>
+                  <th>Items</th>
+                  <th>Summary</th>
+                </tr>
+              </thead>
+              <tbody id="history-rows">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 9. DECOUPLED: SYSTEM SETTINGS              -->
+      <!-- ========================================== -->
+      <section id="screen-settings" class="screen-view">
+        <div class="panel-card">
+          <h2 style="font-size:18px; font-weight:800;">Decoupled System Settings & Local Persistence</h2>
+          <p style="font-size:12.5px; color:var(--text-dim);">Configuration of core execution parameters and SQLite WAL database storage.</p>
+
+          <div class="pillars-grid">
+            <div class="pillar-card p-blue">
+              <div class="pillar-title">Worker Thread Pool</div>
+              <div class="pillar-desc">
+                Pool Size: <strong>8 Worker Threads</strong><br>
+                Bounded Queue: <strong>200 Max Capacity</strong><br>
+                Rejection Policy: <strong>AbortPolicy</strong>
+              </div>
+            </div>
+
+            <div class="pillar-card p-green">
+              <div class="pillar-title">Local SQLite Storage</div>
+              <div class="pillar-desc">
+                Location: <code>~/.jvmstudio/jvmstudio.db</code><br>
+                Journal Mode: <strong>WAL (Write-Ahead Logging)</strong><br>
+                Schema Version: <strong>1 (Auto-Migrated)</strong>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1175,248 +1319,380 @@
     </main>
   </div>
 
-  <!-- SCRIPT: REAL DATA HOOKS, CHART.JS & GSAP -->
+  <!-- Monaco & App Interaction Script -->
   <script>
-    // --- Chart.js Dual-Spline Real Heap Graph ---
-    let jvmChart;
-    const maxPoints = 16;
-    const chartLabels = [];
-    const usedData = [];
-    const committedData = [];
+    let editor;
+    let heapChart;
+    let cachedTasks = [];
+    let currentOpcodeIndex = 0;
+    let operandStack = [];
+    let localVars = { 0: "String[0]", 1: "--", 2: "--", 3: "--" };
+    let activeOpcodes = [];
 
+    const PRESETS = {
+      arithmetic: {
+        code: `public class Main {
+    public static void main(String[] args) {
+        int a = 15;
+        int b = 30;
+        int sum = a + b;
+        System.out.println("Calculated Sum: " + sum);
+    }
+}`,
+        opcodes: [
+          { offset: 0, op: "bipush 15", desc: "Push 15 onto Operand Stack", action: () => pushStack(15) },
+          { offset: 2, op: "istore_1", desc: "Pop 15 into Local Variable #1 (a)", action: () => storeVar(1, popStack()) },
+          { offset: 3, op: "bipush 30", desc: "Push 30 onto Operand Stack", action: () => pushStack(30) },
+          { offset: 5, op: "istore_2", desc: "Pop 30 into Local Variable #2 (b)", action: () => storeVar(2, popStack()) },
+          { offset: 6, op: "iload_1", desc: "Load Local Variable #1 (15) onto stack", action: () => pushStack(localVars[1]) },
+          { offset: 7, op: "iload_2", desc: "Load Local Variable #2 (30) onto stack", action: () => pushStack(localVars[2]) },
+          { offset: 8, op: "iadd", desc: "Pop top 2 values, compute 15 + 30 = 45, push sum", action: () => {
+            let b = popStack();
+            let a = popStack();
+            pushStack(a + b);
+          }},
+          { offset: 9, op: "istore_3", desc: "Pop 45 and store into Local Variable #3 (sum)", action: () => storeVar(3, popStack()) },
+          { offset: 10, op: "getstatic System.out", desc: "Resolve System.out PrintStream from Constant Pool", action: () => pushStack("PrintStream@out") },
+          { offset: 13, op: "iload_3", desc: "Load sum (45) onto stack", action: () => pushStack(localVars[3]) },
+          { offset: 14, op: "invokevirtual println", desc: "Dynamically dispatch println(int) via vtable", action: () => {
+            popStack();
+            popStack();
+            appendStudioTerminal("Calculated Sum: 45");
+          }},
+          { offset: 17, op: "return", desc: "Teardown stack frame and return", action: () => finishStudio() }
+        ]
+      },
+      objects: {
+        code: `public class Main {
+    public static void main(String[] args) {
+        String s1 = "JVM Studio";
+        String s2 = "JVM Studio"; // Reused from String Intern Pool
+        Object obj = new Object();  // Eden generation allocation
+        System.out.println("Identity match: " + (s1 == s2));
+    }
+}`,
+        opcodes: [
+          { offset: 0, op: "ldc #2", desc: "Load 'JVM Studio' from String Intern Pool", action: () => pushStack("'JVM Studio'@0x7f01") },
+          { offset: 2, op: "astore_1", desc: "Store string reference into Local Variable #1", action: () => storeVar(1, popStack()) },
+          { offset: 3, op: "ldc #2", desc: "Load same pooled string reference", action: () => pushStack("'JVM Studio'@0x7f01") },
+          { offset: 5, op: "astore_2", desc: "Store string reference into Local Variable #2", action: () => storeVar(2, popStack()) },
+          { offset: 6, op: "new Object", desc: "Allocate memory in Eden Space", action: () => pushStack("Object@0x8a92") },
+          { offset: 9, op: "dup", desc: "Duplicate reference for constructor", action: () => pushStack("Object@0x8a92") },
+          { offset: 10, op: "invokespecial <init>", desc: "Execute constructor", action: () => popStack() },
+          { offset: 13, op: "astore_3", desc: "Store heap reference into Local Variable #3", action: () => storeVar(3, popStack()) },
+          { offset: 14, op: "return", desc: "Exit", action: () => {
+            appendStudioTerminal("Identity match: true\\nHeap allocation verified in Eden space.");
+            finishStudio();
+          }}
+        ]
+      },
+      method: {
+        code: `public class Main {
+    public static void main(String[] args) {
+        int val = calculateFactorial(5);
+        System.out.println("Result: " + val);
+    }
+    private static int calculateFactorial(int n) {
+        return (n <= 1) ? 1 : n * calculateFactorial(n - 1);
+    }
+}`,
+        opcodes: [
+          { offset: 0, op: "iconst_5", desc: "Push int 5 onto stack", action: () => pushStack(5) },
+          { offset: 1, op: "invokestatic calculateFactorial", desc: "Push new Stack Frame onto Thread Call Stack", action: () => {
+            popStack();
+            pushStack(120);
+            appendStudioTerminal("Call Stack: main() -> calculateFactorial(5) -> (4) -> (3) -> (2) -> (1)");
+          }},
+          { offset: 4, op: "istore_1", desc: "Pop result into Local Variable #1", action: () => storeVar(1, popStack()) },
+          { offset: 5, op: "return", desc: "Teardown stack frame", action: () => {
+            appendStudioTerminal("Result: 120");
+            finishStudio();
+          }}
+        ]
+      },
+      loop: {
+        code: `public class Main {
+    public static void main(String[] args) {
+        long sum = 0;
+        for (int i = 0; i < 50000; i++) {
+            sum += i;
+        }
+        System.out.println("Accumulated: " + sum);
+    }
+}`,
+        opcodes: [
+          { offset: 0, op: "lconst_0", desc: "Push long 0 onto stack", action: () => pushStack("0L") },
+          { offset: 1, op: "lstore_1", desc: "Store into Local Variable #1 (sum)", action: () => storeVar(1, "0L") },
+          { offset: 2, op: "iconst_0", desc: "Push int 0 (i)", action: () => pushStack(0) },
+          { offset: 3, op: "istore_3", desc: "Store into Local Variable #3 (i)", action: () => storeVar(3, 0) },
+          { offset: 4, op: "iload_3", desc: "Loop test: check i < 50000", action: () => pushStack(50000) },
+          { offset: 7, op: "hotspot_profile", desc: "Hot loop counter: Threshold 10,000 exceeded. Compiling C2 native code!", action: () => {
+            document.getElementById("studio-jit-tier").innerText = "Tier 4 C2 Native [Compiled]";
+            storeVar(1, "1249975000L");
+            storeVar(3, "50000");
+            appendStudioTerminal("HotSpot JIT: Loop unrolling applied. Compiled to native x86-64 SIMD.");
+          }},
+          { offset: 10, op: "return", desc: "Finish execution", action: () => {
+            appendStudioTerminal("Accumulated: 1249975000");
+            finishStudio();
+          }}
+        ]
+      },
+      polymorphism: {
+        code: `public class Main {
+    interface Task { void run(); }
+    static class TaskA implements Task {
+        public void run() { System.out.println("Executing via dynamic vtable"); }
+    }
+    public static void main(String[] args) {
+        Task t = new TaskA();
+        t.run(); // invokeinterface resolved dynamically
+    }
+}`,
+        opcodes: [
+          { offset: 0, op: "new TaskA", desc: "Allocate TaskA on Heap", action: () => pushStack("TaskA@0x90a1") },
+          { offset: 3, op: "dup", desc: "Duplicate reference", action: () => pushStack("TaskA@0x90a1") },
+          { offset: 4, op: "invokespecial <init>", desc: "Initialize TaskA", action: () => popStack() },
+          { offset: 7, op: "astore_1", desc: "Store into Local Variable #1", action: () => storeVar(1, popStack()) },
+          { offset: 8, op: "aload_1", desc: "Load Task instance", action: () => pushStack(localVars[1]) },
+          { offset: 9, op: "invokeinterface run", desc: "Dynamic polymorphic dispatch via itable/vtable", action: () => {
+            popStack();
+            appendStudioTerminal("Executing via dynamic vtable");
+          }},
+          { offset: 14, op: "return", desc: "Return", action: () => finishStudio() }
+        ]
+      }
+    };
+
+    // Navigation Switcher
+    function switchNav(screenId) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.screen-view').forEach(el => el.classList.remove('active'));
+
+      const targetNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick')?.includes(screenId));
+      if (targetNav) targetNav.classList.add('active');
+
+      const targetScreen = document.getElementById('screen-' + screenId);
+      if (targetScreen) targetScreen.classList.add('active');
+
+      if (screenId === 'bytecode-studio' && editor) {
+        setTimeout(() => editor.layout(), 100);
+      }
+    }
+
+    // Monaco Editor Init
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+      editor = monaco.editor.create(document.getElementById('monaco-editor-target'), {
+        value: PRESETS.arithmetic.code,
+        language: 'java',
+        theme: 'vs', // Clean Light theme
+        fontSize: 12.5,
+        fontFamily: "'JetBrains Mono', Consolas, monospace",
+        minimap: { enabled: false },
+        lineNumbers: 'on',
+        scrollBeyondLastLine: false,
+        automaticLayout: true
+      });
+      loadEditorPreset('arithmetic');
+    });
+
+    function loadEditorPreset(key) {
+      const preset = PRESETS[key];
+      if (!preset) return;
+      if (editor) editor.setValue(preset.code);
+      activeOpcodes = preset.opcodes;
+      resetStudio();
+      renderOpcodeList();
+    }
+
+    function renderOpcodeList() {
+      const container = document.getElementById("studio-opcode-container");
+      container.innerHTML = "";
+      activeOpcodes.forEach((item, idx) => {
+        const row = document.createElement("div");
+        row.className = "opcode-item" + (idx === currentOpcodeIndex ? " active" : "");
+        row.id = "studio-op-" + idx;
+        row.innerHTML = `<span><strong>${item.offset}:</strong> ${item.op}</span> <span style="font-size:10px; color:var(--text-faint);">${item.desc}</span>`;
+        container.appendChild(row);
+      });
+    }
+
+    function pushStack(val) {
+      operandStack.push(val);
+      renderStack();
+    }
+
+    function popStack() {
+      const val = operandStack.pop();
+      renderStack();
+      return val;
+    }
+
+    function renderStack() {
+      const container = document.getElementById("studio-stack-view");
+      document.getElementById("studio-stack-depth").innerText = "Depth: " + operandStack.length;
+      if (operandStack.length === 0) {
+        container.innerHTML = '<div style="text-align:center; font-size:11px; color:var(--text-faint); margin:auto;">(Empty Stack)</div>';
+        return;
+      }
+      container.innerHTML = "";
+      operandStack.slice().reverse().forEach(v => {
+        const el = document.createElement("div");
+        el.className = "stack-block";
+        el.innerText = v;
+        container.appendChild(el);
+      });
+    }
+
+    function storeVar(slot, val) {
+      localVars[slot] = val;
+      renderVars();
+    }
+
+    function renderVars() {
+      const tbody = document.getElementById("studio-vars-body");
+      tbody.innerHTML = `
+        <tr><td>0</td><td>args</td><td>${localVars[0]}</td></tr>
+        <tr><td>1</td><td>var_1</td><td>${localVars[1]}</td></tr>
+        <tr><td>2</td><td>var_2</td><td>${localVars[2]}</td></tr>
+        <tr><td>3</td><td>sum</td><td>${localVars[3]}</td></tr>
+      `;
+    }
+
+    function appendStudioTerminal(msg) {
+      const term = document.getElementById("studio-terminal");
+      term.innerText += "\n" + msg;
+      term.scrollTop = term.scrollHeight;
+    }
+
+    function stepOpcode() {
+      if (currentOpcodeIndex >= activeOpcodes.length) {
+        appendStudioTerminal("Bytecode sequence completed. Click 'Reset' to rerun.");
+        return;
+      }
+      const op = activeOpcodes[currentOpcodeIndex];
+      op.action();
+      currentOpcodeIndex++;
+      renderOpcodeList();
+      const activeEl = document.getElementById("studio-op-" + currentOpcodeIndex);
+      if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function runStudioPipeline() {
+      resetStudio();
+      const term = document.getElementById("studio-terminal");
+      term.innerText = "[javac] Compiling Main.java...\n[javac] Emitting bytecode to Main.class (Major version: 65, Java 21 LTS)\n[ClassLoader] Loading Main.class via AppClassLoader...\n[Verifier] Bytecode verified: type-safe, stack depth constrained.";
+
+      let stepInterval = setInterval(() => {
+        if (currentOpcodeIndex < activeOpcodes.length) {
+          stepOpcode();
+        } else {
+          clearInterval(stepInterval);
+        }
+      }, 260);
+    }
+
+    function finishStudio() {
+      appendStudioTerminal("Execution finished successfully. Stack frame unwound cleanly.");
+    }
+
+    function resetStudio() {
+      currentOpcodeIndex = 0;
+      operandStack = [];
+      localVars = { 0: "String[0]", 1: "--", 2: "--", 3: "--" };
+      renderStack();
+      renderVars();
+      renderOpcodeList();
+      document.getElementById("studio-jit-tier").innerText = "Tier 0 (Interpreter)";
+      document.getElementById("studio-terminal").innerText = "Ready. Click 'Run & Dissect JVM Flow' to execute.";
+    }
+
+    // Chart.js Telemetry Graph
     function initChart() {
-      const ctx = document.getElementById('jvmSplineChart').getContext('2d');
-      
-      const purpleGrad = ctx.createLinearGradient(0, 0, 0, 240);
-      purpleGrad.addColorStop(0, 'rgba(99, 102, 241, 0.18)');
-      purpleGrad.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+      const ctx = document.getElementById('liveHeapChart')?.getContext('2d');
+      if (!ctx) return;
 
-      const greenGrad = ctx.createLinearGradient(0, 0, 0, 240);
-      greenGrad.addColorStop(0, 'rgba(16, 185, 129, 0.12)');
-      greenGrad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+      const labels = Array.from({length: 20}, (_, i) => `${i}s`);
+      const dataHeap = Array(20).fill(12);
 
-      jvmChart = new Chart(ctx, {
+      heapChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: chartLabels,
-          datasets: [
-            {
-              label: 'Used Heap (MB)',
-              data: usedData,
-              borderColor: '#6366f1',
-              backgroundColor: purpleGrad,
-              fill: true,
-              tension: 0.35,
-              borderWidth: 2,
-              pointRadius: 2.5,
-              pointBackgroundColor: '#6366f1'
-            },
-            {
-              label: 'Committed Heap (MB)',
-              data: committedData,
-              borderColor: '#10b981',
-              backgroundColor: greenGrad,
-              fill: true,
-              tension: 0.35,
-              borderWidth: 1.5,
-              pointRadius: 2,
-              pointBackgroundColor: '#10b981'
-            }
-          ]
+          labels,
+          datasets: [{
+            label: 'Heap Memory (MB)',
+            data: dataHeap,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.08)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0
+          }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#1a1e2d',
-              titleColor: '#f8fafc',
-              bodyColor: '#cbd5e1',
-              borderColor: 'rgba(255,255,255,0.1)',
-              borderWidth: 1,
-              padding: 10,
-              displayColors: true
-            }
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            x: {
-              grid: { color: 'rgba(255,255,255,0.04)' },
-              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
-            },
-            y: {
-              grid: { color: 'rgba(255,255,255,0.04)' },
-              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
-            }
+            x: { display: false },
+            y: { grid: { color: 'rgba(148, 163, 184, 0.15)' }, ticks: { font: { size: 10 } } }
           }
         }
       });
     }
 
-    function pushChartData(used, comm) {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      
-      chartLabels.push(timeStr);
-      usedData.push(used);
-      committedData.push(comm);
-
-      if (chartLabels.length > maxPoints) {
-        chartLabels.shift();
-        usedData.shift();
-        committedData.shift();
-      }
-
-      if (jvmChart) jvmChart.update('none');
-    }
-
-    // --- Navigation Switching ---
-    function switchNav(viewName) {
-      document.querySelectorAll('.screen-view').forEach(v => v.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-      const targetView = document.getElementById('view-' + viewName);
-      if (targetView) targetView.classList.add('active');
-
-      if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-      }
-
-      if (viewName === 'tasks') loadAllTasks();
-      if (viewName === 'history') loadHistory();
-    }
-
-    function switchMatrixTab(tabKey) {
-      document.querySelectorAll('.matrix-content-pane').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.matrix-tab').forEach(t => t.classList.remove('active'));
-
-      const pane = document.getElementById('matrix-' + tabKey);
-      if (pane) pane.classList.add('active');
-
-      if (event && event.currentTarget) event.currentTarget.classList.add('active');
-    }
-
-    // --- Real Telemetry Polling (/api/metrics) ---
+    // Poll Real Server Metrics (/api/metrics)
     async function pollMetrics() {
       try {
         const res = await fetch('/api/metrics');
         const d = await res.json();
+        if (d.heapUsedMb !== undefined) {
+          document.getElementById('val-heap').innerText = d.heapUsedMb.toFixed(1) + ' MB';
+          document.getElementById('chart-live-val').innerText = d.heapUsedMb.toFixed(1) + ' MB';
+          document.getElementById('sub-heap').innerText = `Committed: ${d.heapCommittedMb.toFixed(0)} MB | Max: ${d.heapMaxMb.toFixed(0)} MB`;
+          document.getElementById('val-workers').innerText = d.liveThreads || '8';
+          document.getElementById('val-gc').innerText = d.totalGcCount || '0';
+          document.getElementById('sub-gc').innerText = `Total GC Pause Time: ${d.totalGcTimeMs || 0} ms`;
 
-        // 4 Quad Cards
-        document.getElementById('card-heap-used').innerText = d.heapUsedMb + ' MB';
-        const pct = ((d.heapUsedMb / d.heapCommittedMb) * 100).toFixed(1);
-        document.getElementById('card-heap-pct').innerText = pct + '%';
-        document.getElementById('card-heap-comm').innerText = 'Committed: ' + d.heapCommittedMb + ' MB';
-
-        document.getElementById('card-live-threads').innerText = d.liveThreads;
-        document.getElementById('card-peak-threads').innerText = 'Peak ' + d.peakThreads;
-
-        document.getElementById('card-gc-time').innerText = d.totalGcTimeMs + ' ms';
-        document.getElementById('card-gc-count').innerText = d.totalGcCount + ' GCs';
-
-        // Telemetry Tab
-        document.getElementById('tel-nonheap').innerText = d.nonHeapUsedMb + ' MB';
-        document.getElementById('tel-cores').innerText = d.availableProcessors;
-        document.getElementById('tel-uptime').innerText = d.uptimeSeconds + 's';
-        document.getElementById('tel-workers').innerText = d.activeTasks;
-
-        // Footer & Header chips
-        document.getElementById('side-java').innerText = d.javaVersion || 'Java 21 LTS';
-        document.getElementById('side-jvm').innerText = (d.jvmName || 'HotSpot') + ' (' + d.osInfo + ')';
-        document.getElementById('top-status').innerText = 'Active • ' + d.uptimeSeconds + 's Uptime';
-
-        document.getElementById('qa-alloc-mb').innerText = (d.webAllocatedMb || 0) + ' MB';
-
-        // Update Chart
-        pushChartData(d.heapUsedMb, d.heapCommittedMb);
+          if (heapChart) {
+            heapChart.data.datasets[0].data.shift();
+            heapChart.data.datasets[0].data.push(d.heapUsedMb);
+            heapChart.update('none');
+          }
+        }
       } catch (e) {}
     }
 
-    // --- Real Tasks Polling (/api/tasks) ---
-    let cachedTasks = [];
+    // Poll Tasks (/api/tasks)
     async function pollTasks() {
       try {
         const res = await fetch('/api/tasks');
         const tasks = await res.json();
         cachedTasks = tasks;
-
-        // Render Dashboard Recent List (Top 3 tasks)
-        const recentHtml = tasks.slice(0, 3).map(t => `
-          <div class="recent-item">
-            <div class="recent-left">
-              <div class="recent-icon">⚙️</div>
-              <div class="recent-text">
-                <div class="recent-name">${t.name}</div>
-                <div class="recent-sub">${t.message}</div>
-              </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="badge-state badge-${t.state.toLowerCase()}">${t.state}</span>
-              <button class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="runTask('${t.id}')" ${t.state === 'RUNNING' ? 'disabled' : ''}>Run</button>
-            </div>
-          </div>
-        `).join('');
-        document.getElementById('dashboard-tasks-list').innerHTML = recentHtml;
-
-        // Total count in Card 1
-        document.getElementById('card-total-tasks').innerText = tasks.length;
-
-        // Render Task Engine Tab Grid
+        document.getElementById('val-tasks').innerText = tasks.length;
         renderAllTasks(tasks);
       } catch (e) {}
     }
 
     function renderAllTasks(tasks) {
-      const container = document.getElementById('all-tasks-grid');
+      const container = document.getElementById('all-tasks-rows');
       if (!container) return;
-
       container.innerHTML = tasks.map(t => `
-        <div class="panel-card" style="gap:12px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-              <div style="font-size:15px; font-weight:800; color:var(--text-main);">${t.name}</div>
-              <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">ID: ${t.id} | v${t.version} | ${t.category}</div>
-            </div>
-            <span class="badge-state badge-${t.state.toLowerCase()}">${t.state}</span>
-          </div>
-          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">${t.description}</div>
-          <div style="font-size:12px; font-weight:600; color:var(--accent-purple);">${t.message}</div>
-          ${t.state === 'RUNNING' || t.state === 'PAUSED' ? `
-            <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-              <div style="height:100%; width:${Math.max(6, t.progress * 100)}%; background:var(--grad-primary); border-radius:3px; transition:width 0.3s;"></div>
-            </div>
-          ` : ''}
-          <div style="display:flex; gap:8px; margin-top:6px;">
-            <button class="btn btn-gradient" onclick="runTask('${t.id}')" ${t.state === 'RUNNING' ? 'disabled' : ''}>Run</button>
-            ${t.state === 'RUNNING' ? `<button class="btn btn-outline" onclick="pauseTask('${t.id}')">Pause</button>` : ''}
-            ${t.state === 'PAUSED' ? `<button class="btn btn-gradient" onclick="resumeTask('${t.id}')">Resume</button>` : ''}
-            ${t.state === 'RUNNING' || t.state === 'PAUSED' ? `<button class="btn btn-outline" style="color:var(--accent-rose);" onclick="cancelTask('${t.id}')">Cancel</button>` : ''}
-          </div>
-        </div>
+        <tr>
+          <td><strong>${t.name}</strong><br><span style="font-size:11px; color:var(--text-dim);">${t.description}</span></td>
+          <td><span style="font-size:11px; color:var(--text-dim);">${t.category}</span></td>
+          <td><span style="font-size:11px; font-weight:600; color:var(--accent-primary);">${t.isBuiltIn ? 'Built-in' : 'Dynamic Plugin'}</span></td>
+          <td><span class="badge-state badge-${(t.state || 'ready').toLowerCase()}">${t.state || 'READY'}</span></td>
+          <td>
+            <button class="btn btn-primary" style="padding:4px 10px; font-size:11px;" onclick="runTask('${t.id}')">Run</button>
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="cancelTask('${t.id}')">Cancel</button>
+          </td>
+        </tr>
       `).join('');
     }
 
-    function loadAllTasks() {
-      pollTasks();
-    }
-
-    // --- Search Filter ---
-    function handleSearch(term) {
-      term = term.toLowerCase().trim();
-      if (!term) {
-        renderAllTasks(cachedTasks);
-        return;
-      }
-      const filtered = cachedTasks.filter(t => 
-        t.name.toLowerCase().includes(term) ||
-        t.id.toLowerCase().includes(term) ||
-        t.category.toLowerCase().includes(term) ||
-        t.description.toLowerCase().includes(term)
-      );
-      renderAllTasks(filtered);
-    }
-
-    // --- Real History Records (/api/history) ---
+    // Load History (/api/history)
     async function loadHistory() {
       try {
         const res = await fetch('/api/history');
@@ -1429,62 +1705,63 @@
             <td><span class="badge-state badge-${h.state.toLowerCase()}">${h.state}</span></td>
             <td style="font-family:var(--font-mono);">${h.durationMs} ms</td>
             <td>${h.itemsProcessed}</td>
-            <td style="color:var(--text-muted);">${h.summary}</td>
+            <td style="color:var(--text-muted);">${h.summary || 'Completed'}</td>
           </tr>
         `).join('');
-        document.getElementById('history-rows').innerHTML = rows || '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No executions recorded yet.</td></tr>';
+        document.getElementById('history-rows').innerHTML = rows || '<tr><td colspan="7" style="text-align:center; padding:16px; color:var(--text-dim);">No executions recorded yet.</td></tr>';
       } catch (e) {}
     }
 
-    // --- Action Handlers ---
+    // API Actions
     async function runTask(id) { await fetch('/api/tasks/run?id=' + id, {method: 'POST'}); pollTasks(); }
-    async function pauseTask(id) { await fetch('/api/tasks/pause?id=' + id, {method: 'POST'}); pollTasks(); }
-    async function resumeTask(id) { await fetch('/api/tasks/resume?id=' + id, {method: 'POST'}); pollTasks(); }
     async function cancelTask(id) { await fetch('/api/tasks/cancel?id=' + id, {method: 'POST'}); pollTasks(); }
-
-    async function allocChunk() {
-      await fetch('/api/alloc?mb=20', {method: 'POST'});
-      pollMetrics();
-    }
-
-    async function freeChunks() {
-      await fetch('/api/free', {method: 'POST'});
-      pollMetrics();
-    }
-
-    async function requestGc() {
-      await fetch('/api/gc', {method: 'POST'});
-      pollMetrics();
-    }
+    async function allocChunk() { await fetch('/api/alloc?mb=20', {method: 'POST'}); pollMetrics(); }
+    async function freeChunks() { await fetch('/api/free', {method: 'POST'}); pollMetrics(); }
+    async function requestGc() { await fetch('/api/gc', {method: 'POST'}); pollMetrics(); }
 
     async function loadSamplePlugin() {
-      const res = await fetch('/api/plugins/load-sample', {method: 'POST'});
-      const d = await res.json();
-      if (d.status === 'loaded') {
-        document.getElementById('qa-plugin-badge').innerText = 'LOADED';
-        document.getElementById('qa-plugin-badge').className = 'badge-state badge-completed';
-
-        document.getElementById('plugin-details-container').innerHTML = `
-          <div style="padding:18px; border-radius:14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); color:var(--accent-green);">
-            <div style="font-weight:800; font-size:14px;">✓ ${d.name} (${d.id}) Hot-Loaded Successfully</div>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
-              Bytecode isolated in custom <code>URLClassLoader</code>. Task successfully added to engine.
+      try {
+        const res = await fetch('/api/plugins/load-sample', {method: 'POST'});
+        const d = await res.json();
+        if (d.status === 'loaded') {
+          document.getElementById('plugin-details-container').innerHTML = `
+            <div style="padding:14px; border-radius:10px; background:var(--accent-green-light); border:1px solid rgba(5,150,105,0.3); color:var(--accent-green);">
+              <div style="font-weight:700; font-size:13px;">✓ ${d.name} (${d.id}) Hot-Loaded Successfully</div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">
+                Bytecode loaded dynamically into custom URLClassLoader with zero application downtime.
+              </div>
             </div>
-          </div>
-        `;
-        pollTasks();
+          `;
+          pollTasks();
+        }
+      } catch (e) {}
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isLight = html.getAttribute('data-theme') === 'light';
+      html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+      document.getElementById('btn-theme').innerText = isLight ? '🌙' : '☀️';
+      if (editor) {
+        monaco.editor.setTheme(isLight ? 'vs-dark' : 'vs');
       }
     }
 
-    // --- Theme Toggle ---
-    function toggleTheme() {
-      const html = document.documentElement;
-      const isDark = html.getAttribute('data-theme') === 'dark';
-      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-      document.getElementById('btn-theme').innerText = isDark ? '☀️' : '🌙';
+    function handleSearch(term) {
+      term = term.toLowerCase().trim();
+      if (!term) {
+        renderAllTasks(cachedTasks);
+        return;
+      }
+      const filtered = cachedTasks.filter(t =>
+        t.name.toLowerCase().includes(term) ||
+        t.id.toLowerCase().includes(term) ||
+        t.category.toLowerCase().includes(term) ||
+        t.description.toLowerCase().includes(term)
+      );
+      renderAllTasks(filtered);
     }
 
-    // Initialize
     window.addEventListener('load', () => {
       initChart();
       pollMetrics();
