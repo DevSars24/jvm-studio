@@ -14,19 +14,31 @@ import com.sun.net.httpserver.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Embedded HTTP server powering the live Browser Dashboard of JVM Studio.
@@ -62,6 +74,8 @@ public class WebDashboardServer implements AutoCloseable {
         server.createContext("/api/alloc", this::handleAlloc);
         server.createContext("/api/free", this::handleFree);
         server.createContext("/api/plugins/load-sample", this::handleLoadSamplePlugin);
+        server.createContext("/api/compile-run", this::handleCompileRun);
+        server.createContext("/assets/", this::handleAssets);
 
         server.start();
         logger.info("JVM Studio Web Dashboard is live at http://localhost:{}", port);
@@ -299,6 +313,238 @@ public class WebDashboardServer implements AutoCloseable {
             sendResponse(exchange, 200, "application/json", "{\"status\":\"loaded\",\"id\":\"" + def.getId() + "\",\"name\":\"" + escapeJson(def.getName()) + "\"}");
         } catch (Exception e) {
             sendResponse(exchange, 400, "application/json", "{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
+        }
+    }
+
+    private void handleCompileRun(HttpExchange exchange) throws IOException {
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+            exchange.sendResponseHeaders(204, -1);
+            return;
+        }
+
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendResponse(exchange, 405, "application/json", "{\"error\":\"Method Not Allowed\"}");
+            return;
+        }
+
+        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        String code = body;
+        if (body.trim().startsWith("{") && body.contains("\"code\"")) {
+            try {
+                int codeKeyIdx = body.indexOf("\"code\"");
+                int colonIdx = body.indexOf(":", codeKeyIdx);
+                int firstQuote = body.indexOf("\"", colonIdx);
+                if (firstQuote != -1) {
+                    StringBuilder sb = new StringBuilder();
+                    boolean escaped = false;
+                    for (int i = firstQuote + 1; i < body.length(); i++) {
+                        char c = body.charAt(i);
+                        if (escaped) {
+                            if (c == 'n') sb.append('\n');
+                            else if (c == 'r') sb.append('\r');
+                            else if (c == 't') sb.append('\t');
+                            else if (c == '"') sb.append('\"');
+                            else if (c == '\\') sb.append('\\');
+                            else sb.append(c);
+                            escaped = false;
+                        } else if (c == '\\') {
+                            escaped = true;
+                        } else if (c == '"') {
+                            break;
+                        } else {
+                            sb.append(c);
+                        }
+                    }
+                    code = sb.toString();
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (code == null || code.isBlank()) {
+            sendResponse(exchange, 400, "application/json", "{\"error\":\"No Java source code provided\"}");
+            return;
+        }
+
+        String className = "Main";
+        Matcher classMatcher = Pattern.compile("(?:public\\s+)?class\\s+([A-Za-z0-9_$]+)").matcher(code);
+        if (classMatcher.find()) {
+            className = classMatcher.group(1);
+        }
+
+        Path tempDir = Files.createTempDirectory("jvmstudio_compile_");
+        try {
+            Path javaFile = tempDir.resolve(className + ".java");
+            Files.writeString(javaFile, code, StandardCharsets.UTF_8);
+
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+            boolean success = false;
+            StringBuilder compilerErrors = new StringBuilder();
+
+            if (compiler != null) {
+                try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8)) {
+                    Iterable<? extends JavaFileObject> units = fileManager.getJavaFileObjects(javaFile.toFile());
+                    JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, null, null, units);
+                    success = Boolean.TRUE.equals(task.call());
+                }
+            } else {
+                String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator;
+                String javacCmd = javaBin + (System.getProperty("os.name").toLowerCase().contains("win") ? "javac.exe" : "javac");
+                Process proc = new ProcessBuilder(javacCmd, javaFile.toString()).directory(tempDir.toFile()).start();
+                String err = new String(proc.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+                success = (proc.waitFor() == 0);
+                if (!success) compilerErrors.append(err);
+            }
+
+            if (!success) {
+                for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
+                    compilerErrors.append(String.format("Line %d: %s\n", d.getLineNumber(), d.getMessage(Locale.ROOT)));
+                }
+                String errJson = String.format(Locale.ROOT,
+                        "{\"success\":false,\"className\":\"%s\",\"errors\":\"%s\",\"stdout\":\"\",\"disassembly\":\"\",\"opcodes\":[]}",
+                        className, escapeJson(compilerErrors.toString().trim()));
+                sendResponse(exchange, 200, "application/json", errJson);
+                return;
+            }
+
+            // Compilation Succeeded! Run javap -c -p
+            String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator;
+            String javapCmd = javaBin + (System.getProperty("os.name").toLowerCase().contains("win") ? "javap.exe" : "javap");
+            Process javapProc = new ProcessBuilder(javapCmd, "-c", "-p", className)
+                    .directory(tempDir.toFile())
+                    .redirectErrorStream(true)
+                    .start();
+            String javapOutput = new String(javapProc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            javapProc.waitFor(5, TimeUnit.SECONDS);
+
+            // Execute the compiled class to get real output
+            String javaCmd = javaBin + (System.getProperty("os.name").toLowerCase().contains("win") ? "java.exe" : "java");
+            Process runProc = new ProcessBuilder(javaCmd, "-cp", tempDir.toString(), className)
+                    .directory(tempDir.toFile())
+                    .start();
+            boolean exited = runProc.waitFor(4, TimeUnit.SECONDS);
+            String runStdout = "";
+            String runStderr = "";
+            if (!exited) {
+                runProc.destroyForcibly();
+                runStdout = "[Terminated: Execution exceeded 4-second safety timeout]";
+            } else {
+                runStdout = new String(runProc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                runStderr = new String(runProc.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+            }
+
+            String fullStdout = runStdout + (runStderr.isBlank() ? "" : ("\nError: " + runStderr));
+            List<String> opcodeJsonItems = parseJavapOpcodes(javapOutput);
+
+            String jsonResponse = String.format(Locale.ROOT,
+                    "{\"success\":true,\"className\":\"%s\",\"stdout\":\"%s\",\"disassembly\":\"%s\",\"opcodes\":[%s]}",
+                    className,
+                    escapeJson(fullStdout),
+                    escapeJson(javapOutput),
+                    String.join(",", opcodeJsonItems)
+            );
+
+            sendResponse(exchange, 200, "application/json", jsonResponse);
+        } catch (Exception e) {
+            logger.error("Error during compile-run handler", e);
+            sendResponse(exchange, 500, "application/json", "{\"success\":false,\"errors\":\"" + escapeJson(e.getMessage()) + "\"}");
+        } finally {
+            try {
+                try (var s = Files.walk(tempDir)) {
+                    s.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private List<String> parseJavapOpcodes(String javapOutput) {
+        List<String> list = new ArrayList<>();
+        if (javapOutput == null) return list;
+
+        Pattern pattern = Pattern.compile("^\\s*(\\d+):\\s+([a-z0-9_]+)(?:\\s+([^/\\n\\r]+?))?(?:\\s*//.*)?$", Pattern.MULTILINE);
+        Matcher matcher = pattern.matcher(javapOutput);
+
+        while (matcher.find()) {
+            int offset = Integer.parseInt(matcher.group(1));
+            String mnemonic = matcher.group(2).trim();
+            String rawArg = matcher.group(3) != null ? matcher.group(3).trim() : "";
+            rawArg = rawArg.replaceAll("\\s+", " ");
+            String desc = getOpcodeDescription(mnemonic, rawArg);
+
+            String item = String.format(Locale.ROOT,
+                    "{\"offset\":%d,\"op\":\"%s\",\"desc\":\"%s\",\"mnemonic\":\"%s\",\"arg\":\"%s\"}",
+                    offset,
+                    escapeJson(mnemonic + (rawArg.isEmpty() ? "" : " " + rawArg)),
+                    escapeJson(desc),
+                    escapeJson(mnemonic),
+                    escapeJson(rawArg)
+            );
+            list.add(item);
+        }
+        return list;
+    }
+
+    private String getOpcodeDescription(String mnemonic, String arg) {
+        if (mnemonic.startsWith("bipush") || mnemonic.startsWith("sipush")) return "Push " + arg + " onto Operand Stack";
+        if (mnemonic.startsWith("iconst_m1")) return "Push constant -1 onto Operand Stack";
+        if (mnemonic.startsWith("iconst_")) return "Push constant " + mnemonic.substring(7) + " onto Operand Stack";
+        if (mnemonic.startsWith("ldc")) return "Load constant " + arg + " from Constant Pool";
+        if (mnemonic.startsWith("iload_")) return "Load int from Local Variable #" + mnemonic.substring(6) + " onto stack";
+        if (mnemonic.equals("iload")) return "Load int from Local Variable #" + arg + " onto stack";
+        if (mnemonic.startsWith("aload_")) return "Load reference from Local Variable #" + mnemonic.substring(6) + " onto stack";
+        if (mnemonic.equals("aload")) return "Load reference from Local Variable #" + arg + " onto stack";
+        if (mnemonic.startsWith("istore_")) return "Pop int into Local Variable #" + mnemonic.substring(7);
+        if (mnemonic.equals("istore")) return "Pop int into Local Variable #" + arg;
+        if (mnemonic.startsWith("astore_")) return "Pop reference into Local Variable #" + mnemonic.substring(7);
+        if (mnemonic.equals("astore")) return "Pop reference into Local Variable #" + arg;
+        if (mnemonic.equals("iadd")) return "Pop top 2 values, add them, push sum";
+        if (mnemonic.equals("isub")) return "Pop top 2 values, subtract, push difference";
+        if (mnemonic.equals("imul")) return "Pop top 2 values, multiply, push product";
+        if (mnemonic.equals("idiv")) return "Pop top 2 values, divide, push quotient";
+        if (mnemonic.equals("irem")) return "Pop top 2 values, compute modulo (%), push remainder";
+        if (mnemonic.equals("iinc")) return "Increment local variable " + arg;
+        if (mnemonic.equals("dup")) return "Duplicate top value on Operand Stack";
+        if (mnemonic.equals("new")) return "Allocate uninitialized " + arg + " on Heap";
+        if (mnemonic.equals("invokespecial")) return "Invoke instance initializer " + arg;
+        if (mnemonic.equals("invokevirtual")) return "Dynamically dispatch " + arg + " via vtable";
+        if (mnemonic.equals("invokestatic")) return "Invoke static method " + arg;
+        if (mnemonic.equals("invokeinterface")) return "Invoke interface method " + arg + " via itable";
+        if (mnemonic.equals("invokedynamic")) return "Invoke bootstrap dynamic call site " + arg;
+        if (mnemonic.equals("getstatic")) return "Resolve static field " + arg + " from Constant Pool";
+        if (mnemonic.equals("putstatic")) return "Assign static field " + arg;
+        if (mnemonic.equals("getfield")) return "Fetch field " + arg + " from object";
+        if (mnemonic.equals("putfield")) return "Assign field " + arg + " on object";
+        if (mnemonic.equals("return")) return "Teardown stack frame and return void";
+        if (mnemonic.equals("ireturn") || mnemonic.equals("areturn")) return "Return top value to caller";
+        if (mnemonic.startsWith("if_") || mnemonic.startsWith("if")) return "Branch conditionally to " + arg;
+        return "Execute opcode " + mnemonic + (arg.isEmpty() ? "" : " " + arg);
+    }
+
+    private void handleAssets(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        String filename = path.replace("/assets/", "");
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            filename = Path.of(filename).getFileName().toString();
+        }
+        Path localPath = Path.of("desktop-app/src/main/resources/web/assets", filename);
+        if (!Files.exists(localPath)) {
+            localPath = Path.of("assets", filename);
+        }
+        if (Files.exists(localPath) && !Files.isDirectory(localPath)) {
+            byte[] bytes = Files.readAllBytes(localPath);
+            String contentType = filename.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
+            exchange.getResponseHeaders().set("Content-Type", contentType);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Cache-Control", "public, max-age=86400");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        } else {
+            sendResponse(exchange, 404, "text/plain", "Asset not found: " + filename);
         }
     }
 
