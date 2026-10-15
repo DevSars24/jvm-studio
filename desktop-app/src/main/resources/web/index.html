@@ -7,15 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Chart.js for real-time telemetry graphs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 
   <style>
     :root {
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', Consolas, monospace;
 
-      /* Elegant White Studio Palette */
+      /* Pure White Studio Architectural Palette */
       --bg-page: #f8fafc;
       --bg-surface: #ffffff;
       --bg-elevated: #f1f5f9;
@@ -123,7 +121,7 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 22px;
       list-style: none;
     }
 
@@ -156,6 +154,7 @@
       padding: 6px 12px;
       border-radius: 999px;
       border: 1px solid rgba(5, 150, 105, 0.2);
+      white-space: nowrap;
     }
 
     .status-dot {
@@ -173,6 +172,100 @@
       100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
     }
 
+    /* Mobile Hamburger Button */
+    .mobile-menu-btn {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 38px;
+      height: 38px;
+      padding: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+
+    .mobile-menu-btn span {
+      display: block;
+      height: 2px;
+      width: 100%;
+      background: var(--text-main);
+      border-radius: 2px;
+      transition: all 0.2s ease;
+    }
+
+    /* Mobile Drawer */
+    .mobile-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 1050;
+    }
+    .mobile-backdrop.active { display: block; }
+
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: -320px;
+      width: 290px;
+      height: 100vh;
+      background: #ffffff;
+      box-shadow: -8px 0 24px rgba(15, 23, 42, 0.12);
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+    .mobile-drawer.active { right: 0; }
+
+    .mobile-drawer-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .drawer-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 26px;
+      line-height: 1;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .mobile-nav-links {
+      list-style: none;
+      padding: 12px 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mobile-nav-links a {
+      display: block;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+      transition: all 0.15s ease;
+    }
+
+    .mobile-nav-links a:hover {
+      background: var(--bg-elevated);
+      color: var(--accent-primary);
+      padding-left: 24px;
+    }
+
     /* Container */
     .container {
       max-width: 1200px;
@@ -182,7 +275,7 @@
 
     /* Section Styles */
     section {
-      padding: 70px 0;
+      padding: 68px 0;
       border-bottom: 1px solid var(--border-subtle);
     }
 
@@ -190,32 +283,32 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       color: var(--accent-primary);
       margin-bottom: 10px;
       background: var(--accent-primary-light);
-      padding: 4px 10px;
+      padding: 4px 12px;
       border-radius: 999px;
     }
 
     .section-title {
-      font-size: 32px;
+      font-size: 30px;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.025em;
       color: var(--text-main);
       line-height: 1.25;
       margin-bottom: 12px;
     }
 
     .section-subtitle {
-      font-size: 16px;
+      font-size: 15.5px;
       color: var(--text-dim);
       max-width: 760px;
       line-height: 1.6;
-      margin-bottom: 36px;
+      margin-bottom: 34px;
     }
 
     /* Buttons */
@@ -239,22 +332,20 @@
     .btn-primary {
       background: var(--accent-primary);
       color: #ffffff;
-      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.22);
     }
-
     .btn-primary:hover {
       background: #1d4ed8;
-      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
       transform: translateY(-1px);
     }
 
     .btn-secondary {
-      background: #ffffff;
-      border-color: var(--border-subtle);
+      background: var(--bg-surface);
       color: var(--text-main);
+      border: 1px solid var(--border-subtle);
       box-shadow: var(--shadow-sm);
     }
-
     .btn-secondary:hover {
       background: var(--bg-elevated);
       border-color: var(--border-focus);
@@ -262,83 +353,87 @@
 
     .btn-warning {
       background: var(--accent-amber-light);
-      border-color: rgba(217, 119, 6, 0.25);
       color: var(--accent-amber);
+      border: 1px solid rgba(217, 119, 6, 0.25);
     }
-
     .btn-warning:hover {
       background: #fef3c7;
     }
 
+    .btn-danger {
+      background: var(--accent-rose-light);
+      color: var(--accent-rose);
+      border: 1px solid rgba(220, 38, 38, 0.25);
+    }
+    .btn-danger:hover {
+      background: #fee2e2;
+    }
+
     /* Hero Section */
     .hero-section {
-      padding: 85px 0 65px;
-      text-align: center;
-      background: radial-gradient(circle at 50% 10%, rgba(37, 99, 235, 0.05) 0%, transparent 60%);
+      background: #ffffff;
+      padding: 80px 0 65px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .hero-headline {
-      font-size: 48px;
+      font-size: 44px;
       font-weight: 800;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.035em;
       line-height: 1.15;
       color: var(--text-main);
-      max-width: 920px;
-      margin: 0 auto 18px;
+      margin-bottom: 18px;
+      max-width: 900px;
     }
 
     .hero-lead {
-      font-size: 18px;
-      color: var(--text-dim);
-      max-width: 760px;
-      margin: 0 auto 32px;
-      line-height: 1.6;
+      font-size: 16.5px;
+      color: var(--text-muted);
+      max-width: 800px;
+      line-height: 1.65;
+      margin-bottom: 30px;
     }
 
     .hero-actions {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 14px;
-      margin-bottom: 44px;
+      margin-bottom: 38px;
+      flex-wrap: wrap;
     }
 
     .hero-specs-bar {
       display: flex;
       align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 20px;
-      padding: 16px 28px;
-      background: var(--bg-surface);
+      gap: 16px;
+      padding: 14px 20px;
+      background: var(--bg-subtle);
       border: 1px solid var(--border-subtle);
-      border-radius: 999px;
-      box-shadow: var(--shadow-sm);
-      max-width: 860px;
-      margin: 0 auto;
+      border-radius: var(--radius-lg);
+      font-size: 12.5px;
+      color: var(--text-dim);
+      flex-wrap: wrap;
     }
 
     .spec-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--text-muted);
+      gap: 6px;
     }
 
     .spec-item strong {
       color: var(--text-main);
+      font-weight: 700;
     }
 
     .spec-divider {
       color: var(--border-focus);
     }
 
-    /* KPI Cards Grid */
+    /* KPI Quad Grid */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 18px;
       margin-bottom: 28px;
     }
@@ -347,7 +442,7 @@
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      padding: 22px;
+      padding: 20px 22px;
       box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
@@ -367,11 +462,11 @@
     }
 
     .kpi-label {
-      font-size: 12.5px;
+      font-size: 11.5px;
       font-weight: 700;
-      color: var(--text-dim);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
     }
 
     .kpi-icon {
@@ -379,30 +474,29 @@
     }
 
     .kpi-val {
-      font-size: 28px;
+      font-size: 27px;
       font-weight: 800;
       color: var(--text-main);
-      font-family: var(--font-sans);
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
+      font-family: var(--font-mono);
     }
 
     .kpi-sub {
       font-size: 11.5px;
       color: var(--text-dim);
-      line-height: 1.4;
     }
 
-    /* Telemetry Chart Layout */
+    /* Telemetry Layout */
     .telemetry-layout {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      gap: 20px;
+      gap: 22px;
     }
 
     .chart-box {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       padding: 24px;
       box-shadow: var(--shadow-card);
       display: flex;
@@ -414,17 +508,29 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .chart-canvas-wrap {
-      height: 240px;
+      height: 230px;
       position: relative;
+      background: #fafcff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    #liveHeapChart {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
     .memory-control-box {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       padding: 24px;
       box-shadow: var(--shadow-card);
       display: flex;
@@ -432,65 +538,37 @@
       gap: 16px;
     }
 
-    /* Feature Grid / Cards */
-    .feature-grid-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 22px;
+    .preset-pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    .feature-card {
-      background: var(--bg-surface);
+    .preset-pill {
+      background: var(--bg-elevated);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: 26px;
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: all 0.2s ease;
-    }
-
-    .feature-card:hover {
-      box-shadow: var(--shadow-hover);
-      transform: translateY(-2px);
-    }
-
-    .feature-icon-wrap {
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      margin-bottom: 4px;
-    }
-
-    .icon-blue { background: var(--accent-primary-light); color: var(--accent-primary); }
-    .icon-green { background: var(--accent-green-light); color: var(--accent-green); }
-    .icon-purple { background: var(--accent-purple-light); color: var(--accent-purple); }
-    .icon-amber { background: var(--accent-amber-light); color: var(--accent-amber); }
-    .icon-cyan { background: var(--accent-cyan-light); color: var(--accent-cyan); }
-
-    .feature-card-title {
-      font-size: 16.5px;
-      font-weight: 700;
-      color: var(--text-main);
-      letter-spacing: -0.01em;
-    }
-
-    .feature-card-body {
-      font-size: 13.5px;
       color: var(--text-muted);
-      line-height: 1.6;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex: 1 1 auto;
+      text-align: center;
     }
 
-    /* Image Showcase Layout */
+    .preset-pill:hover, .preset-pill.active {
+      background: var(--accent-primary-light);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    /* Showcase Layout & Images */
     .showcase-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 36px;
+      gap: 32px;
       align-items: center;
       margin-top: 24px;
     }
@@ -499,7 +577,7 @@
       background: #ffffff;
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-xl);
-      padding: 10px;
+      padding: 12px;
       box-shadow: var(--shadow-card);
       overflow: hidden;
       display: flex;
@@ -511,18 +589,19 @@
       height: auto;
       border-radius: var(--radius-lg);
       display: block;
-      transition: transform 0.3s ease;
+      transition: transform 0.25s ease;
+      background: #f1f5f9;
     }
 
     .showcase-image-wrap:hover img {
-      transform: scale(1.015);
+      transform: scale(1.012);
     }
 
     .showcase-caption {
       font-size: 11.5px;
       font-weight: 600;
       color: var(--text-dim);
-      padding: 10px 6px 4px;
+      padding: 12px 6px 4px;
       text-align: center;
     }
 
@@ -534,7 +613,7 @@
 
     .step-item {
       display: flex;
-      gap: 14px;
+      gap: 16px;
       align-items: flex-start;
     }
 
@@ -544,8 +623,8 @@
       border-radius: 50%;
       background: var(--accent-primary-light);
       color: var(--accent-primary);
-      font-size: 12px;
       font-weight: 800;
+      font-size: 13px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -554,19 +633,72 @@
     }
 
     .step-title {
-      font-size: 14px;
+      font-size: 14.5px;
       font-weight: 700;
       color: var(--text-main);
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
 
     .step-desc {
-      font-size: 12.5px;
+      font-size: 13px;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
-    /* Interactive Systems Lab Table */
+    /* Feature Grids */
+    .feature-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .feature-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    .icon-blue { background: var(--accent-primary-light); color: var(--accent-primary); }
+    .icon-green { background: var(--accent-green-light); color: var(--accent-green); }
+    .icon-purple { background: var(--accent-purple-light); color: var(--accent-purple); }
+    .icon-cyan { background: var(--accent-cyan-light); color: var(--accent-cyan); }
+    .icon-amber { background: var(--accent-amber-light); color: var(--accent-amber); }
+
+    .feature-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .feature-card-body {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Systems Lab & Tables */
     .lab-box {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
@@ -581,6 +713,7 @@
     .table-responsive {
       width: 100%;
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
     }
@@ -590,6 +723,7 @@
       border-collapse: collapse;
       font-size: 13px;
       text-align: left;
+      min-width: 620px;
     }
 
     th {
@@ -601,6 +735,7 @@
       letter-spacing: 0.04em;
       color: var(--text-dim);
       border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
     }
 
     td {
@@ -626,6 +761,7 @@
       font-size: 11px;
       font-weight: 700;
       font-family: var(--font-mono);
+      white-space: nowrap;
     }
 
     .badge-ready { background: #f1f5f9; color: var(--text-dim); }
@@ -663,7 +799,8 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      font-size: 12px;
+      font-size: 12.5px;
+      line-height: 1.5;
     }
 
     .matrix-tag-java {
@@ -693,13 +830,50 @@
       gap: 20px;
     }
 
-    /* Media Queries */
-    @media (max-width: 900px) {
+    /* ======================================================== */
+    /* COMPREHENSIVE RESPONSIVE DESIGN (PHONES & TABLETS)       */
+    /* ======================================================== */
+    @media (max-width: 992px) {
+      .feature-grid-3 { grid-template-columns: repeat(2, 1fr); }
       .telemetry-layout { grid-template-columns: 1fr; }
-      .showcase-layout { grid-template-columns: 1fr; }
-      .hero-headline { font-size: 34px; }
+      .showcase-layout { grid-template-columns: 1fr; gap: 24px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 820px) {
       .navbar { padding: 12px 18px; }
       .nav-links { display: none; }
+      .mobile-menu-btn { display: flex; }
+      .btn-gc-nav { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 0 16px; }
+      section { padding: 48px 0; }
+      .hero-section { padding: 48px 0 36px; }
+      .hero-headline { font-size: 29px; letter-spacing: -0.025em; line-height: 1.2; }
+      .hero-lead { font-size: 14.5px; margin-bottom: 24px; }
+      .hero-actions { flex-direction: column; width: 100%; gap: 10px; margin-bottom: 28px; }
+      .hero-actions .btn { width: 100%; }
+      .hero-specs-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .spec-divider { display: none; }
+      
+      .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+      .feature-grid-3 { grid-template-columns: 1fr; }
+      .matrix-grid { grid-template-columns: 1fr; }
+      
+      .chart-box, .memory-control-box, .lab-box { padding: 18px 16px; border-radius: var(--radius-lg); }
+      .chart-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .chart-canvas-wrap { height: 190px; }
+      
+      .section-title { font-size: 24px; }
+      .section-subtitle { font-size: 14px; margin-bottom: 24px; }
+      
+      .showcase-image-wrap { padding: 8px; border-radius: var(--radius-lg); }
+      .showcase-caption { font-size: 11px; }
+      
+      .footer-content { flex-direction: column; align-items: flex-start; }
+      .status-text { display: none; }
     }
   </style>
 </head>
@@ -719,9 +893,9 @@
 
     <ul class="nav-links">
       <li><a href="#overview">Overview</a></li>
-      <li><a href="#telemetry">Live Telemetry</a></li>
+      <li><a href="#telemetry">Telemetry</a></li>
       <li><a href="#classloader">ClassLoader</a></li>
-      <li><a href="#memory">Memory Layout</a></li>
+      <li><a href="#memory">Memory</a></li>
       <li><a href="#hotspot-jit">HotSpot JIT</a></li>
       <li><a href="#systems-lab">Interactive Lab</a></li>
       <li><a href="#matrix">Java vs C++</a></li>
@@ -731,13 +905,40 @@
     <div class="nav-actions">
       <div class="engine-status-pill">
         <span class="status-dot"></span>
-        <span>HotSpot 64-Bit Engine Active</span>
+        <span class="status-text">HotSpot 64-Bit Active</span>
       </div>
-      <button class="btn btn-warning" onclick="requestGc()" style="padding:6px 14px; font-size:12px;">
+      <button class="btn btn-warning btn-gc-nav" onclick="requestGc()" style="padding:6px 14px; font-size:12px;">
         Trigger GC
+      </button>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu" onclick="toggleDrawer()">
+        <span></span><span></span><span></span>
       </button>
     </div>
   </header>
+
+  <!-- Mobile Drawer Menu -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-header">
+      <div class="brand-title">Architecture Menu</div>
+      <button class="drawer-close-btn" onclick="closeDrawer()">&times;</button>
+    </div>
+    <ul class="mobile-nav-links">
+      <li><a href="#overview" onclick="closeDrawer()">Overview</a></li>
+      <li><a href="#telemetry" onclick="closeDrawer()">Live Telemetry Hub</a></li>
+      <li><a href="#classloader" onclick="closeDrawer()">ClassLoader Subsystem</a></li>
+      <li><a href="#memory" onclick="closeDrawer()">Runtime Data Areas (Memory)</a></li>
+      <li><a href="#hotspot-jit" onclick="closeDrawer()">HotSpot JIT Compilation</a></li>
+      <li><a href="#systems-lab" onclick="closeDrawer()">Interactive Systems Lab</a></li>
+      <li><a href="#matrix" onclick="closeDrawer()">Architectural Showdown (Java vs C++)</a></li>
+      <li><a href="#audit-log" onclick="closeDrawer()">Execution Audit Log</a></li>
+    </ul>
+    <div style="padding: 16px 20px; border-top: 1px solid var(--border-subtle); display:flex; flex-direction:column; gap:10px;">
+      <button class="btn btn-warning" onclick="requestGc(); closeDrawer();" style="width: 100%;">
+        Trigger System.gc()
+      </button>
+    </div>
+  </div>
+  <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeDrawer()"></div>
 
   <main>
 
@@ -855,9 +1056,20 @@
               <span style="font-size:12px; color:var(--text-dim);">Allocate real heap blocks and observe automatic garbage collection</span>
             </div>
 
+            <!-- Memory Size Presets -->
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <label style="font-size:11.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Select Allocation Block Size:</label>
+              <div class="preset-pill-row">
+                <button class="preset-pill" onclick="setAllocSize(10, this)">10 MB</button>
+                <button class="preset-pill active" onclick="setAllocSize(20, this)">20 MB</button>
+                <button class="preset-pill" onclick="setAllocSize(50, this)">50 MB</button>
+                <button class="preset-pill" onclick="setAllocSize(100, this)">100 MB</button>
+              </div>
+            </div>
+
             <div style="display:flex; flex-direction:column; gap:10px;">
-              <button class="btn btn-primary" onclick="allocChunk()">
-                + Allocate 20 MB Heap Block
+              <button class="btn btn-primary" id="btnAllocHeap" onclick="allocChunk()">
+                + Allocate <span id="alloc-size-label">20</span> MB Heap Block
               </button>
               <button class="btn btn-secondary" onclick="freeChunks()">
                 Release References (Eligible for GC)
@@ -936,7 +1148,10 @@
           </div>
 
           <div class="showcase-image-wrap">
-            <img src="./assets/jvm-architecture.jpg" alt="Java Virtual Machine Internal Architecture" onerror="this.src='/assets/jvm-architecture.jpg'">
+            <img src="/assets/jvm-architecture.jpg" 
+                 alt="Java Virtual Machine Internal Architecture" 
+                 loading="lazy"
+                 onerror="if(this.dataset.tried!=='1'){this.dataset.tried='1';this.src='./assets/jvm-architecture.jpg';}else if(this.dataset.tried!=='2'){this.dataset.tried='2';this.src='assets/jvm_architecture.jpg';}">
             <div class="showcase-caption">Figure 1.1: Complete HotSpot JVM Architecture — ClassLoader, Runtime Data Areas, & Execution Engine</div>
           </div>
         </div>
@@ -1014,6 +1229,15 @@
           </div>
         </div>
 
+        <!-- Featured GC Memory Flow Diagram -->
+        <div class="showcase-image-wrap" style="margin-top: 28px;">
+          <img src="/assets/jvm-gc-flow.jpg" 
+               alt="Generational Garbage Collection & Object Lifecycle Flow" 
+               loading="lazy"
+               onerror="if(this.dataset.tried!=='1'){this.dataset.tried='1';this.src='./assets/jvm-gc-flow.jpg';}else if(this.dataset.tried!=='2'){this.dataset.tried='2';this.src='assets/jvm_gc_flow.jpg';}">
+          <div class="showcase-caption">Figure 1.3: Generational Garbage Collection & Object Lifecycle Flow — Eden, Survivor (S0/S1), Tenured Promotion & Metaspace</div>
+        </div>
+
       </div>
     </section>
 
@@ -1032,7 +1256,10 @@
 
         <div class="showcase-layout">
           <div class="showcase-image-wrap">
-            <img src="./assets/hotspot-jit-pipeline.jpg" alt="HotSpot JIT Tiered Compilation Pipeline" onerror="this.src='/assets/hotspot-jit-pipeline.jpg'">
+            <img src="/assets/hotspot-jit-pipeline.jpg" 
+                 alt="HotSpot JIT Tiered Compilation Pipeline" 
+                 loading="lazy"
+                 onerror="if(this.dataset.tried!=='1'){this.dataset.tried='1';this.src='./assets/hotspot-jit-pipeline.jpg';}else if(this.dataset.tried!=='2'){this.dataset.tried='2';this.src='assets/hotspot_jit_pipeline.jpg';}">
             <div class="showcase-caption">Figure 1.2: HotSpot Tiered Compilation Architecture — Tier 0 Interpreter through Tier 4 C2 Server JIT</div>
           </div>
 
@@ -1061,15 +1288,21 @@
             <div class="step-item">
               <div class="step-badge">4</div>
               <div>
-                <div class="step-title">Tier 4: C2 Server JIT Compiler</div>
+                <div class="step-title">Tier 4: C2 Server Compiler (Opto)</div>
                 <div class="step-desc">
-                  Heavily optimizing global compiler utilizing a Sea-of-Nodes Intermediate Representation. Applies:
-                  <ul style="margin-top:6px; margin-left:18px; font-size:12px; color:var(--text-muted);">
-                    <li><strong>Method Inlining:</strong> Eliminates call frame overhead for frequent method calls.</li>
-                    <li><strong>Loop Unrolling & Vectorization:</strong> Transforms loops into native SIMD/AVX instructions.</li>
-                    <li><strong>Escape Analysis & Scalar Replacement:</strong> If an object does not escape a method, its fields are mapped to CPU registers/stack, bypassing Heap allocation completely!</li>
-                    <li><strong>On-Stack Replacement (OSR):</strong> Replaces a running interpreted hot loop with native code mid-execution.</li>
-                  </ul>
+                  Heavy optimizing compiler. Employs <strong>Global Value Numbering (GVN)</strong>, <strong>Escape Analysis (Scalar Replacement)</strong>, 
+                  <strong>Speculative Inlining</strong>, and <strong>SIMD Vectorization</strong> to produce peak-performance native machine code matching or exceeding C++.
+                </div>
+              </div>
+            </div>
+
+            <div class="step-item">
+              <div class="step-badge">⚡</div>
+              <div>
+                <div class="step-title">On-Stack Replacement (OSR) & Deoptimization</div>
+                <div class="step-desc">
+                  Hot long-running loops are compiled in the background and hot-swapped directly into executing stack frames mid-loop. 
+                  If speculative assumptions fail, the VM gracefully deoptimizes back to interpreted execution.
                 </div>
               </div>
             </div>
@@ -1085,28 +1318,22 @@
     <!-- ========================================== -->
     <section id="systems-lab">
       <div class="container">
-        <span class="section-eyebrow">Playable Subsystems</span>
-        <h2 class="section-title">Interactive Systems Laboratory & Task Orchestrator</h2>
+        <span class="section-eyebrow">Hands-On Systems Lab</span>
+        <h2 class="section-title">Interactive Task Execution & Concurrency Engine</h2>
         <p class="section-subtitle">
-          Test core runtime services in real time: trigger bounded thread pool execution, observe concurrent task states, 
-          and hot-load external plugins into Metaspace via custom ClassLoaders.
+          Execute real background tasks managed by the core <code>TaskEngine</code>. Observe live state transitions, thread pooling, 
+          and cancellation tokens with zero main-thread blocking.
         </p>
 
         <div class="lab-box">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
             <div>
-              <h3 style="font-size:16px; font-weight:700;">Bounded ThreadPool Task Engine</h3>
-              <span style="font-size:12px; color:var(--text-dim);">Cooperative task cancellation with bounded queue overflow protection</span>
+              <h3 style="font-size:16px; font-weight:700;">Task Registry & Runtime Dispatcher</h3>
+              <span style="font-size:12px; color:var(--text-dim);">ThreadPoolExecutor Capacity: 8 Carrier Threads | Queue Limit: 200</span>
             </div>
-
-            <div style="display:flex; gap:10px;">
-              <button class="btn btn-secondary" onclick="loadSamplePlugin()" id="btn-hotload">
-                + Hot-Load Sample Plugin JAR
-              </button>
-              <button class="btn btn-primary" onclick="pollTasks()">
-                Refresh Task States
-              </button>
-            </div>
+            <button class="btn btn-secondary" onclick="pollTasks()">
+              Refresh Task Registry
+            </button>
           </div>
 
           <div id="plugin-banner-container"></div>
@@ -1208,14 +1435,14 @@
         <h2 class="section-title">Execution History & SQLite Audit Log</h2>
         <p class="section-subtitle">
           Every task executed across JVM Studio is recorded persistently using SQLite with Write-Ahead Logging (WAL) 
-          for crash resilience and ACID compliance.
+          and transaction guarantees.
         </p>
 
         <div class="lab-box">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
             <div>
-              <h3 style="font-size:15px; font-weight:700;">Persistent Audit Trail</h3>
-              <span style="font-size:11.5px; color:var(--text-dim);">Database Location: <code>~/.jvmstudio/jvmstudio.db</code></span>
+              <h3 style="font-size:16px; font-weight:700;">SQLite WAL Persistent Storage</h3>
+              <span style="font-size:12px; color:var(--text-dim);">Database: ~/.jvmstudio/jvmstudio.db (WAL Mode Enabled)</span>
             </div>
             <button class="btn btn-secondary" onclick="loadHistory()">
               Refresh History
@@ -1247,39 +1474,265 @@
 
   </main>
 
-
   <!-- ========================================== -->
   <!-- FOOTER                                     -->
   <!-- ========================================== -->
   <footer>
     <div class="container">
       <div class="footer-content">
-        <div>
-          <strong style="color:var(--text-main); font-size:14px;">JVM Studio</strong> — Virtual Machine Architecture & Systems Engineering
-          <div style="font-size:12px; margin-top:4px;">
-            Built with Java 21 LTS, HotSpot 64-Bit VM, JavaFX Desktop, & SQLite WAL.
-          </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="brand-icon" style="width:28px; height:28px; font-size:14px;">J</div>
+          <span style="font-weight:700; color:var(--text-main);">JVM Studio</span>
+          <span>• Java 21 LTS Systems Engineering & Educational Lab</span>
         </div>
-
-        <div style="font-size:12px; text-align:right;">
-          <span>Branch: <code>feature/white-studio-decoupled</code></span><br>
-          <span style="color:var(--accent-green); font-weight:600;">System Status: Operational</span>
+        <div>
+          Designed for systems engineers, JVM performance tuners, and software architects.
         </div>
       </div>
     </div>
   </footer>
 
 
-  <!-- ========================================== -->
-  <!-- JAVASCRIPT TELEMETRY & LAB CONTROLS        -->
-  <!-- ========================================== -->
+  <!-- ======================================================== -->
+  <!-- CLIENT JAVASCRIPT: NATIVE CANVAS SPLINE ENGINE & LAB     -->
+  <!-- ======================================================== -->
   <script>
-    let heapChart;
-    let cachedTasks = [];
+    let currentAllocMb = 20;
+    let heapCanvasChart = null;
     let simulatedHeapMb = 34.8;
     let simulatedGcCount = 2;
     let simulatedGcTimeMs = 15;
+    let cachedTasks = [];
 
+    // Mobile Navigation Controls
+    function toggleDrawer() {
+      const drawer = document.getElementById('mobileDrawer');
+      const backdrop = document.getElementById('mobileBackdrop');
+      if (drawer && backdrop) {
+        drawer.classList.toggle('active');
+        backdrop.classList.toggle('active');
+      }
+    }
+
+    function closeDrawer() {
+      const drawer = document.getElementById('mobileDrawer');
+      const backdrop = document.getElementById('mobileBackdrop');
+      if (drawer && backdrop) {
+        drawer.classList.remove('active');
+        backdrop.classList.remove('active');
+      }
+    }
+
+    // Allocation Preset Selection
+    function setAllocSize(mb, btn) {
+      currentAllocMb = mb;
+      document.querySelectorAll('.preset-pill').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      const lbl = document.getElementById('alloc-size-label');
+      if (lbl) lbl.innerText = mb;
+    }
+
+    // ==========================================================
+    // ZERO-DEPENDENCY HIGH-DPI CANVAS SPLINE TELEMETRY RENDERER
+    // ==========================================================
+    class LiveSplineRenderer {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.data = [32.0, 32.8, 33.5, 33.1, 34.2, 35.8, 35.1, 34.5, 34.0, 34.8, 35.4, 36.2, 35.0, 34.1, 34.8, 35.5, 34.2, 33.6, 34.1, 34.8];
+        this.maxPoints = 25;
+        this.pulse = 0;
+        this.animId = null;
+
+        this.init();
+      }
+
+      init() {
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.startLoop();
+      }
+
+      resize() {
+        if (!this.canvas) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        this.cssWidth = rect.width || this.canvas.parentElement?.clientWidth || 600;
+        this.cssHeight = rect.height || 220;
+        this.canvas.width = this.cssWidth * dpr;
+        this.canvas.height = this.cssHeight * dpr;
+        if (this.ctx.resetTransform) {
+          this.ctx.resetTransform();
+        }
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.draw();
+      }
+
+      push(val) {
+        if (typeof val === 'number' && !isNaN(val)) {
+          this.data.push(val);
+          if (this.data.length > this.maxPoints) {
+            this.data.shift();
+          }
+        }
+      }
+
+      startLoop() {
+        const loop = () => {
+          this.pulse = (this.pulse + 0.05) % (Math.PI * 2);
+          this.draw();
+          this.animId = requestAnimationFrame(loop);
+        };
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.animId = requestAnimationFrame(loop);
+      }
+
+      draw() {
+        if (!this.ctx || !this.cssWidth || !this.cssHeight) return;
+        const ctx = this.ctx;
+        const w = this.cssWidth;
+        const h = this.cssHeight;
+
+        // Clear
+        ctx.clearRect(0, 0, w, h);
+
+        const padLeft = 48;
+        const padRight = 24;
+        const padTop = 22;
+        const padBottom = 26;
+        const plotW = w - padLeft - padRight;
+        const plotH = h - padTop - padBottom;
+
+        if (plotW <= 0 || plotH <= 0) return;
+
+        // Dynamic Range Calculation
+        let minVal = Math.min(...this.data);
+        let maxVal = Math.max(...this.data);
+        if (minVal === maxVal) { minVal -= 5; maxVal += 5; }
+        const range = maxVal - minVal;
+        const yMin = Math.max(0, Math.floor(minVal - range * 0.2));
+        const yMax = Math.ceil(maxVal + range * 0.25);
+        const yRange = yMax - yMin || 1;
+
+        // Horizontal Gridlines & Y-Axis Labels
+        const gridSteps = 4;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.font = '10px "JetBrains Mono", Consolas, monospace';
+
+        for (let i = 0; i <= gridSteps; i++) {
+          const ratio = i / gridSteps;
+          const y = padTop + plotH * (1 - ratio);
+          const val = yMin + yRange * ratio;
+
+          // Gridline
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(226, 232, 240, 0.9)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          ctx.moveTo(padLeft, y);
+          ctx.lineTo(w - padRight, y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Label
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(`${Math.round(val)} MB`, padLeft - 8, y);
+        }
+
+        // Coordinate points mapping
+        const stepX = plotW / (this.data.length - 1 || 1);
+        const points = this.data.map((val, idx) => {
+          const normY = (val - yMin) / yRange;
+          return {
+            x: padLeft + idx * stepX,
+            y: padTop + plotH * (1 - Math.max(0, Math.min(1, normY)))
+          };
+        });
+
+        if (points.length < 2) return;
+
+        // Draw Spline Curve & Area Gradient Fill
+        ctx.save();
+        const fillPath = new Path2D();
+        fillPath.moveTo(points[0].x, padTop + plotH);
+        fillPath.lineTo(points[0].x, points[0].y);
+        for (let i = 0; i < points.length - 1; i++) {
+          const xc = (points[i].x + points[i + 1].x) / 2;
+          const yc = (points[i].y + points[i + 1].y) / 2;
+          fillPath.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        }
+        fillPath.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+        fillPath.lineTo(points[points.length - 1].x, padTop + plotH);
+        fillPath.closePath();
+
+        const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
+        grad.addColorStop(0, 'rgba(37, 99, 235, 0.20)');
+        grad.addColorStop(0.65, 'rgba(37, 99, 235, 0.05)');
+        grad.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+        ctx.fillStyle = grad;
+        ctx.fill(fillPath);
+        ctx.restore();
+
+        // Stroke Spline Line
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 0; i < points.length - 1; i++) {
+          const xc = (points[i].x + points[i + 1].x) / 2;
+          const yc = (points[i].y + points[i + 1].y) / 2;
+          ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        }
+        ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
+        // Glowing Pulsating Head Point
+        const lastPt = points[points.length - 1];
+        const pulseR = 5 + Math.sin(this.pulse) * 3;
+        const pulseAlpha = 0.28 + Math.sin(this.pulse) * 0.15;
+
+        // Outer Aura
+        ctx.beginPath();
+        ctx.arc(lastPt.x, lastPt.y, pulseR + 4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(37, 99, 235, ${pulseAlpha})`;
+        ctx.fill();
+
+        // Inner Core Bead
+        ctx.beginPath();
+        ctx.arc(lastPt.x, lastPt.y, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Tooltip Pill at Head
+        const latestVal = this.data[this.data.length - 1].toFixed(1) + ' MB';
+        ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
+        const txtWidth = ctx.measureText(latestVal).width;
+        const tipX = Math.min(w - padRight - txtWidth - 10, Math.max(padLeft, lastPt.x - txtWidth / 2));
+        const tipY = Math.max(padTop - 6, lastPt.y - 14);
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(tipX - 6, tipY - 11, txtWidth + 12, 17, 4);
+        } else {
+          ctx.rect(tipX - 6, tipY - 11, txtWidth + 12, 17);
+        }
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(latestVal, tipX, tipY + 1);
+      }
+    }
+
+    // Default Fallback Task Definitions
     const defaultTasks = [
       { id: "file-backup", name: "File & Folder Backup Engine", version: "1.0.0", author: "JVM Studio Core", category: "File Operations", description: "Recursive folder backup with collision handling, loop prevention, and chunked progress.", isBuiltIn: true, state: "READY" },
       { id: "folder-analyzer", name: "Disk & Folder Storage Analyzer", version: "1.0.0", author: "JVM Studio Core", category: "Analysis", description: "Deep disk scanner detailing volume, extension distribution, and largest files.", isBuiltIn: true, state: "READY" },
@@ -1288,50 +1741,19 @@
       { id: "word-frequency-counter", name: "Text & Code Word Counter", version: "1.0.0", author: "JVM Studio Core Team", category: "Text Analysis", description: "Recursively parses text and source files, calculates word frequencies, and surfaces top keywords.", isBuiltIn: false, state: "READY" }
     ];
 
+    // Default Fallback History Records
     const defaultHistory = [
       { executionId: "exec-9a1b2c", taskName: "SHA-256 Cryptographic Verifier", category: "Security", state: "SUCCESS", durationMs: 42, itemsProcessed: 1250, summary: "Streamed 1,250 file blocks, calculated SHA-256 hashes without memory leaks." },
       { executionId: "exec-8f3d4e", taskName: "JVM Heap Allocation & GC Demo", category: "Educational Lab", state: "SUCCESS", durationMs: 18, itemsProcessed: 40, summary: "Allocated 40MB across 2,000 objects in Eden, triggered 1 Minor GC." },
       { executionId: "exec-7c2a1b", taskName: "Disk & Folder Storage Analyzer", category: "Analysis", state: "SUCCESS", durationMs: 65, itemsProcessed: 8900, summary: "Scanned 8,900 directory entries, generated extension distribution histogram." }
     ];
 
-    // Chart.js Telemetry Graph Init
+    // Initialize Native Spline Chart
     function initChart() {
-      const ctx = document.getElementById('liveHeapChart')?.getContext('2d');
-      if (!ctx) return;
-
-      const labels = Array.from({length: 20}, (_, i) => `${i}s`);
-      const initialData = [32, 33, 35, 34, 36, 38, 37, 36, 35, 36, 37, 38, 36, 35, 36, 37, 35, 34, 35, 34.8];
-
-      heapChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Heap Memory (MB)',
-            data: initialData,
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37, 99, 235, 0.08)',
-            fill: true,
-            tension: 0.35,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: false },
-            y: {
-              grid: { color: 'rgba(148, 163, 184, 0.15)' },
-              ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 } }
-            }
-          }
-        }
-      });
+      heapCanvasChart = new LiveSplineRenderer('liveHeapChart');
     }
 
-    // Poll Real Server Metrics with Simulation Fallback
+    // Poll Real Server Metrics with Organic Breathing Simulation Fallback
     async function pollMetrics() {
       try {
         const res = await fetch('/api/metrics');
@@ -1344,23 +1766,28 @@
         }
       } catch (e) {}
 
-      // Fallback: gentle breathing curve
+      // Fallback breathing curve
       simulatedHeapMb = Math.max(30, Math.min(180, simulatedHeapMb + (Math.random() * 2.0 - 0.9)));
       updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
     }
 
     function updateMetricsUI(usedMb, committedMb, maxMb, workers, gcCount, gcTimeMs) {
-      document.getElementById('val-heap').innerText = usedMb.toFixed(1) + ' MB';
-      document.getElementById('chart-live-val').innerText = usedMb.toFixed(1) + ' MB';
-      document.getElementById('sub-heap').innerText = `Committed: ${committedMb.toFixed(0)} MB | Max: ${maxMb.toFixed(0)} MB`;
-      document.getElementById('val-workers').innerText = (workers || 8) + ' Threads';
-      document.getElementById('val-gc').innerText = (gcCount || 0) + ' Collections';
-      document.getElementById('sub-gc').innerText = `Total Pause Duration: ${gcTimeMs || 0} ms`;
+      const valHeap = document.getElementById('val-heap');
+      const chartLive = document.getElementById('chart-live-val');
+      const subHeap = document.getElementById('sub-heap');
+      const valWorkers = document.getElementById('val-workers');
+      const valGc = document.getElementById('val-gc');
+      const subGc = document.getElementById('sub-gc');
 
-      if (heapChart) {
-        heapChart.data.datasets[0].data.shift();
-        heapChart.data.datasets[0].data.push(usedMb);
-        heapChart.update('none');
+      if (valHeap) valHeap.innerText = usedMb.toFixed(1) + ' MB';
+      if (chartLive) chartLive.innerText = usedMb.toFixed(1) + ' MB';
+      if (subHeap) subHeap.innerText = `Committed: ${committedMb ? committedMb.toFixed(0) : 116} MB | Max: ${maxMb ? maxMb.toFixed(0) : 1846} MB`;
+      if (valWorkers) valWorkers.innerText = (workers || 8) + ' Threads';
+      if (valGc) valGc.innerText = (gcCount || 0) + ' Collections';
+      if (subGc) subGc.innerText = `Total Pause Duration: ${gcTimeMs || 0} ms`;
+
+      if (heapCanvasChart) {
+        heapCanvasChart.push(usedMb);
       }
     }
 
@@ -1371,7 +1798,8 @@
         if (res.ok) {
           const tasks = await res.json();
           cachedTasks = tasks;
-          document.getElementById('val-tasks').innerText = tasks.length + ' Tasks';
+          const valTasks = document.getElementById('val-tasks');
+          if (valTasks) valTasks.innerText = tasks.length + ' Tasks';
           renderTasksTable(tasks);
           return;
         }
@@ -1380,7 +1808,8 @@
       if (cachedTasks.length === 0) {
         cachedTasks = [...defaultTasks];
       }
-      document.getElementById('val-tasks').innerText = cachedTasks.length + ' Tasks';
+      const valTasks = document.getElementById('val-tasks');
+      if (valTasks) valTasks.innerText = cachedTasks.length + ' Tasks';
       renderTasksTable(cachedTasks);
     }
 
@@ -1395,22 +1824,133 @@
           </td>
           <td><span style="font-size:11.5px; color:var(--text-dim);">${t.category}</span></td>
           <td>
-            <span style="font-size:11px; font-weight:700; color:${t.isBuiltIn ? 'var(--accent-primary)' : 'var(--accent-purple)'}; background:${t.isBuiltIn ? 'var(--accent-primary-light)' : 'var(--accent-purple-light)'}; padding:3px 8px; border-radius:999px;">
+            <span style="font-size:11px; font-weight:700; color:${t.isBuiltIn ? 'var(--accent-primary)' : 'var(--accent-purple)'}; background:${t.isBuiltIn ? 'var(--accent-primary-light)' : 'var(--accent-purple-light)'}; padding:3px 8px; border-radius:999px; white-space:nowrap;">
               ${t.isBuiltIn ? 'Core Built-In' : 'Dynamic URLClassLoader'}
             </span>
           </td>
           <td>
-            <span class="badge-state badge-${(t.state || 'ready').toLowerCase()}">${t.state || 'READY'}</span>
+            <span class="badge-state ${getStateBadgeClass(t.state)}">${t.state || 'READY'}</span>
           </td>
           <td>
-            <button class="btn btn-primary" style="padding:5px 12px; font-size:11px;" onclick="runTask('${t.id}')">Run</button>
-            <button class="btn btn-secondary" style="padding:5px 12px; font-size:11px;" onclick="cancelTask('${t.id}')">Cancel</button>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn btn-primary" style="padding:5px 12px; font-size:11.5px;" onclick="runTask('${t.id}')">
+                Run Task
+              </button>
+              ${t.state === 'RUNNING' ? `
+                <button class="btn btn-danger" style="padding:5px 10px; font-size:11.5px;" onclick="cancelTask('${t.id}')">
+                  Cancel
+                </button>
+              ` : ''}
+            </div>
           </td>
         </tr>
       `).join('');
     }
 
-    // Load History
+    function getStateBadgeClass(state) {
+      if (state === 'RUNNING') return 'badge-running';
+      if (state === 'SUCCESS') return 'badge-success';
+      if (state === 'CANCELLED' || state === 'FAILED') return 'badge-cancelled';
+      return 'badge-ready';
+    }
+
+    // Execute Task via API with Simulated Fallback
+    async function runTask(taskId) {
+      updateTaskState(taskId, 'RUNNING');
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/run`, { method: 'POST' });
+        if (res.ok) {
+          const result = await res.json();
+          setTimeout(() => {
+            updateTaskState(taskId, result.success ? 'SUCCESS' : 'FAILED');
+            loadHistory();
+            pollMetrics();
+          }, 800);
+          return;
+        }
+      } catch (e) {}
+
+      // Fallback local simulation
+      setTimeout(() => {
+        updateTaskState(taskId, 'SUCCESS');
+        const execId = 'exec-' + Math.random().toString(36).substring(2, 8);
+        const taskDef = cachedTasks.find(t => t.id === taskId) || { name: taskId, category: "Core" };
+        defaultHistory.unshift({
+          executionId: execId,
+          taskName: taskDef.name,
+          category: taskDef.category,
+          state: "SUCCESS",
+          durationMs: Math.floor(Math.random() * 80 + 15),
+          itemsProcessed: Math.floor(Math.random() * 500 + 50),
+          summary: `Successfully executed ${taskDef.name} via thread pool worker.`
+        });
+        loadHistory();
+        pollMetrics();
+      }, 1000);
+    }
+
+    function updateTaskState(taskId, state) {
+      const task = cachedTasks.find(t => t.id === taskId);
+      if (task) task.state = state;
+      renderTasksTable(cachedTasks);
+    }
+
+    async function cancelTask(taskId) {
+      try {
+        await fetch(`/api/tasks/${taskId}/cancel`, { method: 'POST' });
+      } catch (e) {}
+      updateTaskState(taskId, 'CANCELLED');
+    }
+
+    // Memory Allocation Lab Functions
+    async function allocChunk() {
+      try {
+        const res = await fetch(`/api/memory/allocate?sizeMb=${currentAllocMb}`, { method: 'POST' });
+        if (res.ok) {
+          pollMetrics();
+          return;
+        }
+      } catch (e) {}
+
+      // Local Fallback simulation
+      simulatedHeapMb += currentAllocMb;
+      if (heapCanvasChart) heapCanvasChart.push(simulatedHeapMb);
+      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
+    }
+
+    async function freeChunks() {
+      try {
+        const res = await fetch('/api/memory/free', { method: 'POST' });
+        if (res.ok) {
+          pollMetrics();
+          return;
+        }
+      } catch (e) {}
+
+      // Local Fallback simulation
+      simulatedHeapMb = Math.max(34.8, simulatedHeapMb - 20);
+      if (heapCanvasChart) heapCanvasChart.push(simulatedHeapMb);
+      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
+    }
+
+    async function requestGc() {
+      try {
+        const res = await fetch('/api/memory/gc', { method: 'POST' });
+        if (res.ok) {
+          pollMetrics();
+          return;
+        }
+      } catch (e) {}
+
+      // Local Fallback simulation
+      simulatedHeapMb = 34.8;
+      simulatedGcCount++;
+      simulatedGcTimeMs += Math.floor(Math.random() * 8 + 5);
+      if (heapCanvasChart) heapCanvasChart.push(simulatedHeapMb);
+      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
+    }
+
+    // Load Audit Execution History
     async function loadHistory() {
       try {
         const res = await fetch('/api/history');
@@ -1424,142 +1964,39 @@
       renderHistoryTable(defaultHistory);
     }
 
-    function renderHistoryTable(history) {
+    function renderHistoryTable(items) {
       const container = document.getElementById('history-table-body');
       if (!container) return;
-      container.innerHTML = history.map(h => `
+      if (!items || items.length === 0) {
+        container.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:24px;">No historical executions recorded yet. Run a task above.</td></tr>`;
+        return;
+      }
+
+      container.innerHTML = items.slice(0, 10).map(h => `
         <tr>
-          <td style="font-family:var(--font-mono); font-weight:700; color:var(--accent-purple); font-size:12px;">${h.executionId}</td>
+          <td><code style="font-size:11.5px; background:var(--bg-elevated); padding:2px 6px; border-radius:4px;">${h.executionId}</code></td>
           <td><strong>${h.taskName}</strong></td>
           <td><span style="font-size:11.5px; color:var(--text-dim);">${h.category}</span></td>
-          <td><span class="badge-state badge-${h.state.toLowerCase()}">${h.state}</span></td>
-          <td style="font-family:var(--font-mono); font-size:12px;">${h.durationMs} ms</td>
-          <td>${h.itemsProcessed}</td>
-          <td style="color:var(--text-muted); font-size:12px;">${h.summary || 'Task completed successfully'}</td>
+          <td>
+            <span class="badge-state ${getStateBadgeClass(h.state)}">${h.state}</span>
+          </td>
+          <td>${h.durationMs !== undefined ? h.durationMs + ' ms' : '—'}</td>
+          <td>${h.itemsProcessed !== undefined ? h.itemsProcessed.toLocaleString() : '—'}</td>
+          <td><span style="font-size:12px; color:var(--text-muted);">${h.summary || 'Completed successfully.'}</span></td>
         </tr>
       `).join('');
     }
 
-    // Interactive Systems Lab Actions
-    async function runTask(id) {
-      const task = cachedTasks.find(t => t.id === id);
-      if (task) {
-        task.state = "RUNNING";
-        renderTasksTable(cachedTasks);
-      }
-      try {
-        await fetch('/api/tasks/run?id=' + id, {method: 'POST'});
-        setTimeout(pollTasks, 400);
-      } catch (e) {
-        setTimeout(() => {
-          if (task) {
-            task.state = "SUCCESS";
-            renderTasksTable(cachedTasks);
-            defaultHistory.unshift({
-              executionId: "exec-" + Math.random().toString(16).substring(2, 8),
-              taskName: task.name,
-              category: task.category,
-              state: "SUCCESS",
-              durationMs: Math.floor(Math.random() * 45 + 15),
-              itemsProcessed: Math.floor(Math.random() * 5000 + 500),
-              summary: "Executed across 8 bounded worker threads with zero thread leaks."
-            });
-            renderHistoryTable(defaultHistory);
-            setTimeout(() => { task.state = "READY"; renderTasksTable(cachedTasks); }, 2500);
-          }
-        }, 700);
-      }
-    }
-
-    async function cancelTask(id) {
-      const task = cachedTasks.find(t => t.id === id);
-      if (task) {
-        task.state = "CANCELLED";
-        renderTasksTable(cachedTasks);
-        setTimeout(() => { task.state = "READY"; renderTasksTable(cachedTasks); }, 1500);
-      }
-      try {
-        await fetch('/api/tasks/cancel?id=' + id, {method: 'POST'});
-        pollTasks();
-      } catch (e) {}
-    }
-
-    async function allocChunk() {
-      simulatedHeapMb += 20;
-      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
-      try {
-        await fetch('/api/alloc?mb=20', {method: 'POST'});
-        pollMetrics();
-      } catch (e) {}
-    }
-
-    async function freeChunks() {
-      simulatedHeapMb = Math.max(34.8, simulatedHeapMb - 20);
-      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
-      try {
-        await fetch('/api/free', {method: 'POST'});
-        pollMetrics();
-      } catch (e) {}
-    }
-
-    async function requestGc() {
-      simulatedGcCount++;
-      simulatedGcTimeMs += Math.floor(Math.random() * 12 + 6);
-      simulatedHeapMb = 34.8;
-      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
-      try {
-        await fetch('/api/gc', {method: 'POST'});
-        pollMetrics();
-      } catch (e) {}
-    }
-
-    async function loadSamplePlugin() {
-      const banner = document.getElementById('plugin-banner-container');
-      try {
-        const res = await fetch('/api/plugins/load-sample', {method: 'POST'});
-        if (res.ok) {
-          const d = await res.json();
-          if (d.status === 'loaded') {
-            displayPluginSuccess(d.name, d.id);
-            pollTasks();
-            return;
-          }
-        }
-      } catch (e) {}
-
-      // Fallback display
-      displayPluginSuccess("Text & Code Word Counter", "word-frequency-counter");
-      if (!cachedTasks.some(t => t.id === "word-frequency-counter")) {
-        cachedTasks.push(defaultTasks[4]);
-        renderTasksTable(cachedTasks);
-        document.getElementById('val-tasks').innerText = cachedTasks.length + ' Tasks';
-      }
-    }
-
-    function displayPluginSuccess(name, id) {
-      const banner = document.getElementById('plugin-banner-container');
-      if (!banner) return;
-      banner.innerHTML = `
-        <div style="padding:14px 18px; border-radius:var(--radius-md); background:var(--accent-green-light); border:1px solid rgba(5,150,105,0.3); color:var(--accent-green); display:flex; align-items:center; justify-content:space-between; animation:fadeIn 0.3s ease;">
-          <div>
-            <strong style="font-size:13px;">✓ Plugin '${name}' (${id}) Hot-Loaded Successfully!</strong>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-              Bytecode loaded dynamically into custom URLClassLoader with zero host server downtime.
-            </div>
-          </div>
-          <span style="font-size:11px; font-weight:700; background:#ffffff; color:var(--accent-green); padding:4px 10px; border-radius:999px; border:1px solid rgba(5,150,105,0.2);">
-            Active in Metaspace
-          </span>
-        </div>
-      `;
-    }
-
-    window.addEventListener('load', () => {
+    // Bootstrap Application Lifecycle
+    window.addEventListener('DOMContentLoaded', () => {
       initChart();
       pollMetrics();
       pollTasks();
       loadHistory();
-      setInterval(pollMetrics, 1800);
+
+      // Recurring 1Hz Telemetry Poller
+      setInterval(pollMetrics, 1000);
+      setInterval(pollTasks, 4000);
     });
   </script>
 </body>

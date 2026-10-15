@@ -90,6 +90,11 @@ public class WebDashboardServer implements AutoCloseable {
             sendResponse(exchange, 405, "text/plain", "Method Not Allowed");
             return;
         }
+        String path = exchange.getRequestURI().getPath();
+        if (path.startsWith("/assets/") || path.equals("/assets")) {
+            handleAssets(exchange);
+            return;
+        }
         String html = getDashboardHtml();
         sendResponse(exchange, 200, "text/html; charset=UTF-8", html);
     }
@@ -525,26 +530,81 @@ public class WebDashboardServer implements AutoCloseable {
 
     private void handleAssets(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        String filename = path.replace("/assets/", "");
-        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
-            filename = Path.of(filename).getFileName().toString();
+        String rawName = path.substring(path.indexOf("/assets") + 7);
+        if (rawName.startsWith("/")) {
+            rawName = rawName.substring(1);
         }
-        Path localPath = Path.of("desktop-app/src/main/resources/web/assets", filename);
-        if (!Files.exists(localPath)) {
-            localPath = Path.of("assets", filename);
+        if (rawName.contains("..") || rawName.contains("/") || rawName.contains("\\")) {
+            rawName = Path.of(rawName).getFileName().toString();
         }
-        if (Files.exists(localPath) && !Files.isDirectory(localPath)) {
-            byte[] bytes = Files.readAllBytes(localPath);
-            String contentType = filename.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
+
+        List<String> nameVariants = new ArrayList<>();
+        nameVariants.add(rawName);
+        if (rawName.contains("-")) {
+            nameVariants.add(rawName.replace('-', '_'));
+        }
+        if (rawName.contains("_")) {
+            nameVariants.add(rawName.replace('_', '-'));
+        }
+
+        byte[] bytes = null;
+        String matchedName = rawName;
+
+        for (String candidateName : nameVariants) {
+            // Check Classpath
+            for (String cpPrefix : List.of("/web/assets/", "/assets/", "/")) {
+                try (var in = getClass().getResourceAsStream(cpPrefix + candidateName)) {
+                    if (in != null) {
+                        bytes = in.readAllBytes();
+                        matchedName = candidateName;
+                        break;
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (bytes != null) break;
+
+            // Check File System
+            Path[] fileCandidates = new Path[] {
+                Path.of("assets", candidateName),
+                Path.of("desktop-app/src/main/resources/web/assets", candidateName),
+                Path.of("desktop-app/target/classes/web/assets", candidateName),
+                Path.of("C:/Users/DELL/Desktop/java/assets", candidateName),
+                Path.of("C:/Users/DELL/Desktop/java/desktop-app/src/main/resources/web/assets", candidateName),
+                Path.of("C:/Users/DELL/Desktop/java/desktop-app/target/classes/web/assets", candidateName)
+            };
+            for (Path p : fileCandidates) {
+                if (Files.exists(p) && !Files.isDirectory(p)) {
+                    try {
+                        bytes = Files.readAllBytes(p);
+                        matchedName = candidateName;
+                        break;
+                    } catch (Exception ignored) {}
+                }
+            }
+            if (bytes != null) break;
+        }
+
+        if (bytes != null && bytes.length > 0) {
+            String lower = matchedName.toLowerCase();
+            String contentType = "application/octet-stream";
+            if (lower.endsWith(".png")) contentType = "image/png";
+            else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) contentType = "image/jpeg";
+            else if (lower.endsWith(".svg")) contentType = "image/svg+xml";
+            else if (lower.endsWith(".webp")) contentType = "image/webp";
+
             exchange.getResponseHeaders().set("Content-Type", contentType);
             exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().set("Cache-Control", "public, max-age=86400");
+            if ("HEAD".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
             exchange.sendResponseHeaders(200, bytes.length);
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(bytes);
             }
         } else {
-            sendResponse(exchange, 404, "text/plain", "Asset not found: " + filename);
+            sendResponse(exchange, 404, "text/plain", "Asset not found: " + rawName);
         }
     }
 
@@ -552,6 +612,10 @@ public class WebDashboardServer implements AutoCloseable {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", contentType);
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        if ("HEAD".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(status, -1);
+            return;
+        }
         exchange.sendResponseHeaders(status, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
@@ -586,12 +650,20 @@ public class WebDashboardServer implements AutoCloseable {
     }
 
     private String getDashboardHtml() {
-        try {
-            Path p = Path.of("desktop-app/src/main/resources/web/index.html");
-            if (java.nio.file.Files.exists(p)) {
-                return java.nio.file.Files.readString(p, StandardCharsets.UTF_8);
-            }
-        } catch (Exception ignored) {}
+        Path[] candidates = new Path[] {
+            Path.of("desktop-app/src/main/resources/web/index.html"),
+            Path.of("index.html"),
+            Path.of("src/main/resources/web/index.html"),
+            Path.of("C:/Users/DELL/Desktop/java/desktop-app/src/main/resources/web/index.html"),
+            Path.of("C:/Users/DELL/Desktop/java/index.html")
+        };
+        for (Path p : candidates) {
+            try {
+                if (Files.exists(p) && !Files.isDirectory(p)) {
+                    return Files.readString(p, StandardCharsets.UTF_8);
+                }
+            } catch (Exception ignored) {}
+        }
         try (var in = getClass().getResourceAsStream("/web/index.html")) {
             if (in != null) {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8);
