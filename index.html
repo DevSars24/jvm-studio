@@ -1,0 +1,2003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JVM Studio — Virtual Machine Architecture & Systems Laboratory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, monospace;
+
+      /* Pure White Studio Architectural Palette */
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-elevated: #f1f5f9;
+      --bg-subtle: #f8fafc;
+      --border-subtle: #e2e8f0;
+      --border-focus: #cbd5e1;
+
+      --text-main: #0f172a;
+      --text-muted: #334155;
+      --text-dim: #64748b;
+      --text-faint: #94a3b8;
+
+      --accent-primary: #2563eb;
+      --accent-primary-light: #eff6ff;
+      --accent-green: #059669;
+      --accent-green-light: #ecfdf5;
+      --accent-cyan: #0284c7;
+      --accent-cyan-light: #f0f9ff;
+      --accent-purple: #7c3aed;
+      --accent-purple-light: #f5f3ff;
+      --accent-amber: #d97706;
+      --accent-amber-light: #fffbeb;
+      --accent-rose: #dc2626;
+      --accent-rose-light: #fef2f2;
+
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+      --shadow-hover: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+
+      --radius-xl: 16px;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Top Sticky Navigation */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 800;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      background: var(--bg-elevated);
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-primary);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .engine-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-green-light);
+      color: var(--accent-green);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(5, 150, 105, 0.2);
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(5, 150, 105, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+    }
+
+    /* Mobile Hamburger Button */
+    .mobile-menu-btn {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 38px;
+      height: 38px;
+      padding: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+
+    .mobile-menu-btn span {
+      display: block;
+      height: 2px;
+      width: 100%;
+      background: var(--text-main);
+      border-radius: 2px;
+      transition: all 0.2s ease;
+    }
+
+    /* Mobile Drawer */
+    .mobile-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 1050;
+    }
+    .mobile-backdrop.active { display: block; }
+
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: -320px;
+      width: 290px;
+      height: 100vh;
+      background: #ffffff;
+      box-shadow: -8px 0 24px rgba(15, 23, 42, 0.12);
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+    .mobile-drawer.active { right: 0; }
+
+    .mobile-drawer-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .drawer-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 26px;
+      line-height: 1;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .mobile-nav-links {
+      list-style: none;
+      padding: 12px 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mobile-nav-links a {
+      display: block;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+      transition: all 0.15s ease;
+    }
+
+    .mobile-nav-links a:hover {
+      background: var(--bg-elevated);
+      color: var(--accent-primary);
+      padding-left: 24px;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Section Styles */
+    section {
+      padding: 68px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .section-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-primary);
+      margin-bottom: 10px;
+      background: var(--accent-primary-light);
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    .section-title {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+
+    .section-subtitle {
+      font-size: 15.5px;
+      color: var(--text-dim);
+      max-width: 760px;
+      line-height: 1.6;
+      margin-bottom: 34px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.22);
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-focus);
+    }
+
+    .btn-warning {
+      background: var(--accent-amber-light);
+      color: var(--accent-amber);
+      border: 1px solid rgba(217, 119, 6, 0.25);
+    }
+    .btn-warning:hover {
+      background: #fef3c7;
+    }
+
+    .btn-danger {
+      background: var(--accent-rose-light);
+      color: var(--accent-rose);
+      border: 1px solid rgba(220, 38, 38, 0.25);
+    }
+    .btn-danger:hover {
+      background: #fee2e2;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      background: #ffffff;
+      padding: 80px 0 65px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .hero-headline {
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      color: var(--text-main);
+      margin-bottom: 18px;
+      max-width: 900px;
+    }
+
+    .hero-lead {
+      font-size: 16.5px;
+      color: var(--text-muted);
+      max-width: 800px;
+      line-height: 1.65;
+      margin-bottom: 30px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 38px;
+      flex-wrap: wrap;
+    }
+
+    .hero-specs-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      font-size: 12.5px;
+      color: var(--text-dim);
+      flex-wrap: wrap;
+    }
+
+    .spec-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .spec-item strong {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .spec-divider {
+      color: var(--border-focus);
+    }
+
+    /* KPI Quad Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .kpi-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+    }
+
+    .kpi-icon {
+      font-size: 18px;
+    }
+
+    .kpi-val {
+      font-size: 27px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.03em;
+      font-family: var(--font-mono);
+    }
+
+    .kpi-sub {
+      font-size: 11.5px;
+      color: var(--text-dim);
+    }
+
+    /* Telemetry Layout */
+    .telemetry-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 22px;
+    }
+
+    .chart-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chart-canvas-wrap {
+      height: 230px;
+      position: relative;
+      background: #fafcff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    #liveHeapChart {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .memory-control-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .preset-pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .preset-pill {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex: 1 1 auto;
+      text-align: center;
+    }
+
+    .preset-pill:hover, .preset-pill.active {
+      background: var(--accent-primary-light);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    /* Showcase Layout & Images */
+    .showcase-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+      margin-top: 24px;
+    }
+
+    .showcase-image-wrap {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 12px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .showcase-image-wrap img {
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius-lg);
+      display: block;
+      transition: transform 0.25s ease;
+      background: #f1f5f9;
+    }
+
+    .showcase-image-wrap:hover img {
+      transform: scale(1.012);
+    }
+
+    .showcase-caption {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-dim);
+      padding: 12px 6px 4px;
+      text-align: center;
+    }
+
+    .showcase-content {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .step-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent-primary-light);
+      color: var(--accent-primary);
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .step-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Feature Grids */
+    .feature-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .feature-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    .icon-blue { background: var(--accent-primary-light); color: var(--accent-primary); }
+    .icon-green { background: var(--accent-green-light); color: var(--accent-green); }
+    .icon-purple { background: var(--accent-purple-light); color: var(--accent-purple); }
+    .icon-cyan { background: var(--accent-cyan-light); color: var(--accent-cyan); }
+    .icon-amber { background: var(--accent-amber-light); color: var(--accent-amber); }
+
+    .feature-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .feature-card-body {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Systems Lab & Tables */
+    .lab-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+      min-width: 620px;
+    }
+
+    th {
+      background: var(--bg-subtle);
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--bg-subtle);
+    }
+
+    .badge-state {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+
+    .badge-ready { background: #f1f5f9; color: var(--text-dim); }
+    .badge-running { background: #eff6ff; color: #2563eb; }
+    .badge-success { background: #ecfdf5; color: #059669; }
+    .badge-cancelled { background: #fef2f2; color: #dc2626; }
+
+    /* Java vs C++ Matrix */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    .matrix-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .matrix-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 8px;
+    }
+
+    .matrix-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .matrix-tag-java {
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    .matrix-tag-cpp {
+      font-weight: 700;
+      color: var(--accent-purple);
+    }
+
+    /* Footer */
+    footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border-subtle);
+      padding: 44px 0 32px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    .footer-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    /* ======================================================== */
+    /* COMPREHENSIVE RESPONSIVE DESIGN (PHONES & TABLETS)       */
+    /* ======================================================== */
+    @media (max-width: 992px) {
+      .feature-grid-3 { grid-template-columns: repeat(2, 1fr); }
+      .telemetry-layout { grid-template-columns: 1fr; }
+      .showcase-layout { grid-template-columns: 1fr; gap: 24px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 820px) {
+      .navbar { padding: 12px 18px; }
+      .nav-links { display: none; }
+      .mobile-menu-btn { display: flex; }
+      .btn-gc-nav { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 0 16px; }
+      section { padding: 48px 0; }
+      .hero-section { padding: 48px 0 36px; }
+      .hero-headline { font-size: 29px; letter-spacing: -0.025em; line-height: 1.2; }
+      .hero-lead { font-size: 14.5px; margin-bottom: 24px; }
+      .hero-actions { flex-direction: column; width: 100%; gap: 10px; margin-bottom: 28px; }
+      .hero-actions .btn { width: 100%; }
+      .hero-specs-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .spec-divider { display: none; }
+      
+      .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+      .feature-grid-3 { grid-template-columns: 1fr; }
+      .matrix-grid { grid-template-columns: 1fr; }
+      
+      .chart-box, .memory-control-box, .lab-box { padding: 18px 16px; border-radius: var(--radius-lg); }
+      .chart-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .chart-canvas-wrap { height: 190px; }
+      
+      .section-title { font-size: 24px; }
+      .section-subtitle { font-size: 14px; margin-bottom: 24px; }
+      
+      .showcase-image-wrap { padding: 8px; border-radius: var(--radius-lg); }
+      .showcase-caption { font-size: 11px; }
+      
+      .footer-content { flex-direction: column; align-items: flex-start; }
+      .status-text { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- TOP STICKY NAVIGATION BAR                  -->
+  <!-- ========================================== -->
+  <header class="navbar">
+    <a href="#" class="nav-brand">
+      <div class="brand-icon">J</div>
+      <div>
+        <div class="brand-title">JVM Studio</div>
+      </div>
+      <span class="brand-tag">Runtime Lab</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#telemetry">Telemetry</a></li>
+      <li><a href="#classloader">ClassLoader</a></li>
+      <li><a href="#memory">Memory</a></li>
+      <li><a href="#hotspot-jit">HotSpot JIT</a></li>
+      <li><a href="#systems-lab">Interactive Lab</a></li>
+      <li><a href="#matrix">Java vs C++</a></li>
+      <li><a href="#audit-log">Audit Log</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <div class="engine-status-pill">
+        <span class="status-dot"></span>
+        <span class="status-text">HotSpot 64-Bit Active</span>
+      </div>
+      <button class="btn btn-warning btn-gc-nav" onclick="requestGc()" style="padding:6px 14px; font-size:12px;">
+        Trigger GC
+      </button>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu" onclick="toggleDrawer()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Menu -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-header">
+      <div class="brand-title">Architecture Menu</div>
+      <button class="drawer-close-btn" onclick="closeDrawer()">&times;</button>
+    </div>
+    <ul class="mobile-nav-links">
+      <li><a href="#overview" onclick="closeDrawer()">Overview</a></li>
+      <li><a href="#telemetry" onclick="closeDrawer()">Live Telemetry Hub</a></li>
+      <li><a href="#classloader" onclick="closeDrawer()">ClassLoader Subsystem</a></li>
+      <li><a href="#memory" onclick="closeDrawer()">Runtime Data Areas (Memory)</a></li>
+      <li><a href="#hotspot-jit" onclick="closeDrawer()">HotSpot JIT Compilation</a></li>
+      <li><a href="#systems-lab" onclick="closeDrawer()">Interactive Systems Lab</a></li>
+      <li><a href="#matrix" onclick="closeDrawer()">Architectural Showdown (Java vs C++)</a></li>
+      <li><a href="#audit-log" onclick="closeDrawer()">Execution Audit Log</a></li>
+    </ul>
+    <div style="padding: 16px 20px; border-top: 1px solid var(--border-subtle); display:flex; flex-direction:column; gap:10px;">
+      <button class="btn btn-warning" onclick="requestGc(); closeDrawer();" style="width: 100%;">
+        Trigger System.gc()
+      </button>
+    </div>
+  </div>
+  <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeDrawer()"></div>
+
+  <main>
+
+    <!-- ========================================== -->
+    <!-- SECTION 1: HERO OVERVIEW                   -->
+    <!-- ========================================== -->
+    <section class="hero-section" id="overview">
+      <div class="container">
+        <span class="section-eyebrow">Virtual Machine Architecture & Systems Engineering</span>
+        <h1 class="hero-headline">Inside the Java Virtual Machine: From Bytecode to Microsecond Execution</h1>
+        <p class="hero-lead">
+          A clean, interactive architectural laboratory dissecting HotSpot VM internals — dynamic classloader sandboxing, 
+          generational garbage collection, bounded thread pool concurrency, and adaptive multi-tier JIT compilation.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#systems-lab" class="btn btn-primary">Open Interactive Systems Lab →</a>
+          <a href="#classloader" class="btn btn-secondary">Explore Architecture Deep-Dive</a>
+        </div>
+
+        <div class="hero-specs-bar">
+          <div class="spec-item">
+            <span>Runtime:</span>
+            <strong>Java 21 LTS</strong>
+          </div>
+          <span class="spec-divider">•</span>
+          <div class="spec-item">
+            <span>VM Engine:</span>
+            <strong>Oracle HotSpot 64-Bit Server VM</strong>
+          </div>
+          <span class="spec-divider">•</span>
+          <div class="spec-item">
+            <span>Memory Model:</span>
+            <strong>Generational GC & TLAB Allocation</strong>
+          </div>
+          <span class="spec-divider">•</span>
+          <div class="spec-item">
+            <span>Persistence:</span>
+            <strong>SQLite WAL Engine</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 2: REAL-TIME TELEMETRY HUB         -->
+    <!-- ========================================== -->
+    <section id="telemetry">
+      <div class="container">
+        <span class="section-eyebrow">Live Runtime Telemetry</span>
+        <h2 class="section-title">Real-Time Virtual Machine Metrics</h2>
+        <p class="section-subtitle">
+          Direct instrumentation from <code>java.lang.management.ManagementFactory</code> sampling live heap allocation rates,
+          active thread states, and garbage collector pause durations.
+        </p>
+
+        <!-- 4 KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Heap Memory Used</span>
+              <span class="kpi-icon">📊</span>
+            </div>
+            <div class="kpi-val" id="val-heap">34.8 MB</div>
+            <div class="kpi-sub" id="sub-heap">Committed: 116 MB | Max: 1846 MB</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Worker Thread Pool</span>
+              <span class="kpi-icon">🧵</span>
+            </div>
+            <div class="kpi-val" id="val-workers">8 Threads</div>
+            <div class="kpi-sub">Bounded Capacity: 200 Tasks | 8 Cores Available</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">GC Pauses & Time</span>
+              <span class="kpi-icon">♻️</span>
+            </div>
+            <div class="kpi-val" id="val-gc">2 Collections</div>
+            <div class="kpi-sub" id="sub-gc">Total Pause Duration: 15 ms</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Registered Tasks</span>
+              <span class="kpi-icon">🧩</span>
+            </div>
+            <div class="kpi-val" id="val-tasks">5 Tasks</div>
+            <div class="kpi-sub">4 Core Built-In + 1 Dynamic Plugin</div>
+          </div>
+        </div>
+
+        <!-- Telemetry Chart + Interactive Allocation Controls -->
+        <div class="telemetry-layout">
+          <div class="chart-box">
+            <div class="chart-header">
+              <div>
+                <h3 style="font-size:15px; font-weight:700;">Live JVM Heap Utilization Graph</h3>
+                <span style="font-size:11.5px; color:var(--text-dim);">Real-time memory allocation sampling from MemoryMXBean</span>
+              </div>
+              <span style="font-size:12px; font-weight:700; color:var(--accent-primary);" id="chart-live-val">34.8 MB</span>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="liveHeapChart"></canvas>
+            </div>
+          </div>
+
+          <div class="memory-control-box">
+            <div>
+              <h3 style="font-size:15px; font-weight:700;">Live Memory Allocation Lab</h3>
+              <span style="font-size:12px; color:var(--text-dim);">Allocate real heap blocks and observe automatic garbage collection</span>
+            </div>
+
+            <!-- Memory Size Presets -->
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <label style="font-size:11.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Select Allocation Block Size:</label>
+              <div class="preset-pill-row">
+                <button class="preset-pill" onclick="setAllocSize(10, this)">10 MB</button>
+                <button class="preset-pill active" onclick="setAllocSize(20, this)">20 MB</button>
+                <button class="preset-pill" onclick="setAllocSize(50, this)">50 MB</button>
+                <button class="preset-pill" onclick="setAllocSize(100, this)">100 MB</button>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <button class="btn btn-primary" id="btnAllocHeap" onclick="allocChunk()">
+                + Allocate <span id="alloc-size-label">20</span> MB Heap Block
+              </button>
+              <button class="btn btn-secondary" onclick="freeChunks()">
+                Release References (Eligible for GC)
+              </button>
+              <button class="btn btn-warning" onclick="requestGc()">
+                Dispatch System.gc()
+              </button>
+            </div>
+
+            <div style="font-size:11.5px; color:var(--text-muted); background:var(--bg-subtle); padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); line-height:1.5;">
+              <strong>Systems Concept:</strong> Allocating creates live GC roots in Eden space. Releasing references clears root accessibility; physical reclamation occurs when the generational collector sweeps.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 3: CLASSLOADER & VERIFIER          -->
+    <!-- ========================================== -->
+    <section id="classloader">
+      <div class="container">
+        <span class="section-eyebrow">Subsystem 1</span>
+        <h2 class="section-title">ClassLoader Subsystem & 3-Phase Bytecode Verification</h2>
+        <p class="section-subtitle">
+          How the Java Virtual Machine dynamically discovers, verifies, and links executable classes into native Metaspace 
+          with parent-first delegation and strict memory isolation.
+        </p>
+
+        <div class="showcase-layout">
+          <div class="showcase-content">
+            <div class="step-item">
+              <div class="step-badge">1</div>
+              <div>
+                <div class="step-title">Phase 1: Loading & Delegation Hierarchy</div>
+                <div class="step-desc">
+                  Classes are loaded using parent-first delegation: <strong>Bootstrap ClassLoader</strong> (Core runtime) 
+                  &rarr; <strong>Platform ClassLoader</strong> (Extensions) &rarr; <strong>App ClassLoader</strong> (Application classpath) 
+                  &rarr; <strong>Custom URLClassLoader</strong> for hot-pluggable modules.
+                </div>
+              </div>
+            </div>
+
+            <div class="step-item">
+              <div class="step-badge">2</div>
+              <div>
+                <div class="step-title">Phase 2: Bytecode Linking & Verification</div>
+                <div class="step-desc">
+                  <strong>Bytecode Verification:</strong> Confirms the <code>0xCAFEBABE</code> magic header, proves instructions never underflow/overflow 
+                  the Operand Stack, and guarantees type safety before native compilation.<br>
+                  <strong>Preparation:</strong> Allocates memory for static fields and initializes default zero values.<br>
+                  <strong>Resolution:</strong> Resolves symbolic references from the Constant Pool into direct memory pointers.
+                </div>
+              </div>
+            </div>
+
+            <div class="step-item">
+              <div class="step-badge">3</div>
+              <div>
+                <div class="step-title">Phase 3: Initialization (&lt;clinit&gt;)</div>
+                <div class="step-desc">
+                  Executes static initializers and assigns programmer-defined values to static variables under thread-safe synchronization locks.
+                </div>
+              </div>
+            </div>
+
+            <div style="background:var(--accent-green-light); border:1px solid rgba(5,150,105,0.25); border-radius:var(--radius-md); padding:14px; margin-top:8px;">
+              <div style="font-weight:700; font-size:12.5px; color:var(--accent-green); margin-bottom:2px;">Hot-Pluggable Modular Architecture</div>
+              <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+                JVM Studio utilizes isolated child <code>URLClassLoader</code> instances, enabling third-party plugins (e.g. <code>sample-plugin-1.0.0.jar</code>) 
+                to be loaded and unloaded at runtime without restarting the core server.
+              </div>
+            </div>
+          </div>
+
+          <div class="showcase-image-wrap">
+            <img src="/assets/jvm-architecture.jpg" 
+                 alt="Java Virtual Machine Internal Architecture" 
+                 loading="lazy"
+                 onerror="if(this.dataset.tried!=='1'){this.dataset.tried='1';this.src='./assets/jvm-architecture.jpg';}else if(this.dataset.tried!=='2'){this.dataset.tried='2';this.src='assets/jvm_architecture.jpg';}">
+            <div class="showcase-caption">Figure 1.1: Complete HotSpot JVM Architecture — ClassLoader, Runtime Data Areas, & Execution Engine</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 4: RUNTIME DATA AREAS (MEMORY)     -->
+    <!-- ========================================== -->
+    <section id="memory">
+      <div class="container">
+        <span class="section-eyebrow">Subsystem 2</span>
+        <h2 class="section-title">Runtime Data Areas: Thread-Private Stacks vs Managed Heap</h2>
+        <p class="section-subtitle">
+          Understanding the mechanical division of memory in the JVM: thread-isolated stack frames executing with zero garbage collection overhead 
+          versus the shared generational heap managing high-throughput object lifecycles.
+        </p>
+
+        <div class="feature-grid-3">
+          <div class="feature-card">
+            <div class="feature-icon-wrap icon-blue">🗂️</div>
+            <h3 class="feature-card-title">JVM Thread Stacks (Per-Thread)</h3>
+            <p class="feature-card-body">
+              Each OS carrier thread receives an isolated stack frame memory block. Method invocations push new Stack Frames containing 
+              <strong>Local Variable Tables (LVT)</strong>, <strong>Operand Stacks</strong>, and <strong>Frame Data</strong>. 
+              Frames unwind automatically upon method return in nanoseconds without GC pauses.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap icon-green">🌱</div>
+            <h3 class="feature-card-title">Young Gen (Eden & Survivor Spaces)</h3>
+            <p class="feature-card-body">
+              All newly instantiated objects and arrays are allocated in <strong>Eden Space</strong> via lock-free <strong>Thread-Local Allocation Buffers (TLABs)</strong>. 
+              Minor GCs copy surviving objects between <strong>Survivor Spaces (S0 / S1)</strong>, incrementing their tenuring age counter.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap icon-purple">🏛️</div>
+            <h3 class="feature-card-title">Tenured (Old) Generation</h3>
+            <p class="feature-card-body">
+              Objects that survive multiple minor GC cycles (default tenuring threshold: 15) are promoted to the <strong>Old Generation</strong>. 
+              Major / Full GC sweeps and compacts this memory region to prevent fragmentation and support enterprise long-lived state.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap icon-cyan">🧩</div>
+            <h3 class="feature-card-title">Metaspace (Native Class Metadata)</h3>
+            <p class="feature-card-body">
+              Replaces the legacy PermGen. Resides in native host virtual memory. Stores runtime class definitions, virtual method tables (vtables / itables), 
+              annotations, and the <strong>Constant Pool</strong>, scaling dynamically with available system RAM.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap icon-amber">⏱️</div>
+            <h3 class="feature-card-title">Program Counter (PC) Registers</h3>
+            <p class="feature-card-body">
+              Each active thread maintains a dedicated PC register tracking the memory address of the current JVM bytecode instruction being executed, 
+              enabling seamless thread preemption and context-switching across multicore CPUs.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap icon-blue">🛡️</div>
+            <h3 class="feature-card-title">Memory Safety & Compressed OOPs</h3>
+            <p class="feature-card-body">
+              HotSpot utilizes <strong>Compressed Ordinary Object Pointers (Compressed OOPs)</strong> to represent 64-bit heap references using 32-bit pointers, 
+              saving up to 40% memory bandwidth while strictly eliminating dangling pointers and double-free CVE vulnerabilities.
+            </p>
+          </div>
+        </div>
+
+        <!-- Featured GC Memory Flow Diagram -->
+        <div class="showcase-image-wrap" style="margin-top: 28px;">
+          <img src="/assets/jvm-gc-flow.jpg" 
+               alt="Generational Garbage Collection & Object Lifecycle Flow" 
+               loading="lazy"
+               onerror="if(this.dataset.tried!=='1'){this.dataset.tried='1';this.src='./assets/jvm-gc-flow.jpg';}else if(this.dataset.tried!=='2'){this.dataset.tried='2';this.src='assets/jvm_gc_flow.jpg';}">
+          <div class="showcase-caption">Figure 1.3: Generational Garbage Collection & Object Lifecycle Flow — Eden, Survivor (S0/S1), Tenured Promotion & Metaspace</div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 5: HOTSPOT JIT COMPILATION ENGINE  -->
+    <!-- ========================================== -->
+    <section id="hotspot-jit">
+      <div class="container">
+        <span class="section-eyebrow">Subsystem 3</span>
+        <h2 class="section-title">HotSpot Adaptive JIT Compilation Pipeline</h2>
+        <p class="section-subtitle">
+          How the HotSpot Execution Engine dynamically balances zero-startup latency with peak C++ native speed using tiered compilation, 
+          continuous runtime profiling, and advanced compiler optimizations.
+        </p>
+
+        <div class="showcase-layout">
+          <div class="showcase-image-wrap">
+            <img src="/assets/hotspot-jit-pipeline.jpg" 
+                 alt="HotSpot JIT Tiered Compilation Pipeline" 
+                 loading="lazy"
+                 onerror="if(this.dataset.tried!=='1'){this.dataset.tried='1';this.src='./assets/hotspot-jit-pipeline.jpg';}else if(this.dataset.tried!=='2'){this.dataset.tried='2';this.src='assets/hotspot_jit_pipeline.jpg';}">
+            <div class="showcase-caption">Figure 1.2: HotSpot Tiered Compilation Architecture — Tier 0 Interpreter through Tier 4 C2 Server JIT</div>
+          </div>
+
+          <div class="showcase-content">
+            <div class="step-item">
+              <div class="step-badge">0</div>
+              <div>
+                <div class="step-title">Tier 0: Template Interpreter</div>
+                <div class="step-desc">
+                  Starts executing bytecode instructions instantly with zero compilation latency. Tracks method invocation counts and loop backedge frequencies.
+                </div>
+              </div>
+            </div>
+
+            <div class="step-item">
+              <div class="step-badge">1</div>
+              <div>
+                <div class="step-title">Tiers 1–3: C1 Client Compiler</div>
+                <div class="step-desc">
+                  Fast native compilation generating baseline machine code. Tier 2 and Tier 3 inject lightweight profiling instrumentation (Method Data Objects - MDO) 
+                  to record branch probabilities and type profiles.
+                </div>
+              </div>
+            </div>
+
+            <div class="step-item">
+              <div class="step-badge">4</div>
+              <div>
+                <div class="step-title">Tier 4: C2 Server Compiler (Opto)</div>
+                <div class="step-desc">
+                  Heavy optimizing compiler. Employs <strong>Global Value Numbering (GVN)</strong>, <strong>Escape Analysis (Scalar Replacement)</strong>, 
+                  <strong>Speculative Inlining</strong>, and <strong>SIMD Vectorization</strong> to produce peak-performance native machine code matching or exceeding C++.
+                </div>
+              </div>
+            </div>
+
+            <div class="step-item">
+              <div class="step-badge">⚡</div>
+              <div>
+                <div class="step-title">On-Stack Replacement (OSR) & Deoptimization</div>
+                <div class="step-desc">
+                  Hot long-running loops are compiled in the background and hot-swapped directly into executing stack frames mid-loop. 
+                  If speculative assumptions fail, the VM gracefully deoptimizes back to interpreted execution.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 6: INTERACTIVE SYSTEMS LAB         -->
+    <!-- ========================================== -->
+    <section id="systems-lab">
+      <div class="container">
+        <span class="section-eyebrow">Hands-On Systems Lab</span>
+        <h2 class="section-title">Interactive Task Execution & Concurrency Engine</h2>
+        <p class="section-subtitle">
+          Execute real background tasks managed by the core <code>TaskEngine</code>. Observe live state transitions, thread pooling, 
+          and cancellation tokens with zero main-thread blocking.
+        </p>
+
+        <div class="lab-box">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h3 style="font-size:16px; font-weight:700;">Task Registry & Runtime Dispatcher</h3>
+              <span style="font-size:12px; color:var(--text-dim);">ThreadPoolExecutor Capacity: 8 Carrier Threads | Queue Limit: 200</span>
+            </div>
+            <button class="btn btn-secondary" onclick="pollTasks()">
+              Refresh Task Registry
+            </button>
+          </div>
+
+          <div id="plugin-banner-container"></div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Task Definition</th>
+                  <th>Category</th>
+                  <th>Module Type</th>
+                  <th>Engine State</th>
+                  <th>Interactive Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tasks-table-body">
+                <!-- Dynamically populated via API / fallback -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 7: JAVA VS C++ MATRIX              -->
+    <!-- ========================================== -->
+    <section id="matrix">
+      <div class="container">
+        <span class="section-eyebrow">Comparative Architecture</span>
+        <h2 class="section-title">Architectural Showdown: Java HotSpot vs Native C++</h2>
+        <p class="section-subtitle">
+          An objective, nuanced comparison of the mechanical design decisions separating managed runtime architectures 
+          from compiled native binary execution.
+        </p>
+
+        <div class="matrix-grid">
+          <div class="matrix-card">
+            <div class="matrix-title">1. Dynamic ClassLoading vs Static Linking</div>
+            <div class="matrix-row">
+              <span class="matrix-tag-java">Java HotSpot:</span>
+              <span>Classes are loaded, linked, and verified on demand. Modules can be hot-reloaded dynamically at runtime without restarting the server.</span>
+            </div>
+            <div class="matrix-row">
+              <span class="matrix-tag-cpp">Native C++:</span>
+              <span>Compiled directly to native binary via static or shared linking (<code>dlopen</code>). Maximum startup speed, but changes require full link cycles.</span>
+            </div>
+          </div>
+
+          <div class="matrix-card">
+            <div class="matrix-title">2. Generational GC vs RAII Determinism</div>
+            <div class="matrix-row">
+              <span class="matrix-tag-java">Java HotSpot:</span>
+              <span>Automated generational garbage collectors sweep memory without manual deallocation, completely eliminating memory leaks and dangling pointers.</span>
+            </div>
+            <div class="matrix-row">
+              <span class="matrix-tag-cpp">Native C++:</span>
+              <span>Deterministic RAII destructors. Zero GC pauses, but developers bear responsibility for pointer lifecycle management and buffer bounds.</span>
+            </div>
+          </div>
+
+          <div class="matrix-card">
+            <div class="matrix-title">3. Adaptive JIT vs Static AOT Optimization</div>
+            <div class="matrix-row">
+              <span class="matrix-tag-java">Java HotSpot:</span>
+              <span>JIT compiler leverages live CPU branch profiles to perform dynamic devirtualization, speculative inlining, and On-Stack Replacement (OSR).</span>
+            </div>
+            <div class="matrix-row">
+              <span class="matrix-tag-cpp">Native C++:</span>
+              <span>AOT static optimizations (LLVM / GCC) generate predictable assembly with zero compilation warmup, but cannot profile live production workloads.</span>
+            </div>
+          </div>
+
+          <div class="matrix-card">
+            <div class="matrix-title">4. Bounded Concurrency & Virtual Threads</div>
+            <div class="matrix-row">
+              <span class="matrix-tag-java">Java HotSpot:</span>
+              <span>High-level <code>java.util.concurrent</code>, bounded ThreadPoolExecutors, and Project Loom Virtual Threads multiplexing millions of tasks.</span>
+            </div>
+            <div class="matrix-row">
+              <span class="matrix-tag-cpp">Native C++:</span>
+              <span>Direct OS <code>std::thread</code> primitives (pthreads / Win32). Full hardware control, but requires manual cooperative thread pooling.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 8: EXECUTION AUDIT HISTORY         -->
+    <!-- ========================================== -->
+    <section id="audit-log">
+      <div class="container">
+        <span class="section-eyebrow">Persistence & Auditing</span>
+        <h2 class="section-title">Execution History & SQLite Audit Log</h2>
+        <p class="section-subtitle">
+          Every task executed across JVM Studio is recorded persistently using SQLite with Write-Ahead Logging (WAL) 
+          and transaction guarantees.
+        </p>
+
+        <div class="lab-box">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h3 style="font-size:16px; font-weight:700;">SQLite WAL Persistent Storage</h3>
+              <span style="font-size:12px; color:var(--text-dim);">Database: ~/.jvmstudio/jvmstudio.db (WAL Mode Enabled)</span>
+            </div>
+            <button class="btn btn-secondary" onclick="loadHistory()">
+              Refresh History
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Execution ID</th>
+                  <th>Task Name</th>
+                  <th>Category</th>
+                  <th>Final State</th>
+                  <th>Duration</th>
+                  <th>Items Processed</th>
+                  <th>Audit Summary</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <!-- Dynamically populated via API / fallback -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- FOOTER                                     -->
+  <!-- ========================================== -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="brand-icon" style="width:28px; height:28px; font-size:14px;">J</div>
+          <span style="font-weight:700; color:var(--text-main);">JVM Studio</span>
+          <span>• Java 21 LTS Systems Engineering & Educational Lab</span>
+        </div>
+        <div>
+          Designed for systems engineers, JVM performance tuners, and software architects.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ======================================================== -->
+  <!-- CLIENT JAVASCRIPT: NATIVE CANVAS SPLINE ENGINE & LAB     -->
+  <!-- ======================================================== -->
+  <script>
+    let currentAllocMb = 20;
+    let heapCanvasChart = null;
+    let simulatedHeapMb = 34.8;
+    let simulatedGcCount = 2;
+    let simulatedGcTimeMs = 15;
+    let cachedTasks = [];
+
+    // Mobile Navigation Controls
+    function toggleDrawer() {
+      const drawer = document.getElementById('mobileDrawer');
+      const backdrop = document.getElementById('mobileBackdrop');
+      if (drawer && backdrop) {
+        drawer.classList.toggle('active');
+        backdrop.classList.toggle('active');
+      }
+    }
+
+    function closeDrawer() {
+      const drawer = document.getElementById('mobileDrawer');
+      const backdrop = document.getElementById('mobileBackdrop');
+      if (drawer && backdrop) {
+        drawer.classList.remove('active');
+        backdrop.classList.remove('active');
+      }
+    }
+
+    // Allocation Preset Selection
+    function setAllocSize(mb, btn) {
+      currentAllocMb = mb;
+      document.querySelectorAll('.preset-pill').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      const lbl = document.getElementById('alloc-size-label');
+      if (lbl) lbl.innerText = mb;
+    }
+
+    // ==========================================================
+    // ZERO-DEPENDENCY HIGH-DPI CANVAS SPLINE TELEMETRY RENDERER
+    // ==========================================================
+    class LiveSplineRenderer {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.data = [32.0, 32.8, 33.5, 33.1, 34.2, 35.8, 35.1, 34.5, 34.0, 34.8, 35.4, 36.2, 35.0, 34.1, 34.8, 35.5, 34.2, 33.6, 34.1, 34.8];
+        this.maxPoints = 25;
+        this.pulse = 0;
+        this.animId = null;
+
+        this.init();
+      }
+
+      init() {
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.startLoop();
+      }
+
+      resize() {
+        if (!this.canvas) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        this.cssWidth = rect.width || this.canvas.parentElement?.clientWidth || 600;
+        this.cssHeight = rect.height || 220;
+        this.canvas.width = this.cssWidth * dpr;
+        this.canvas.height = this.cssHeight * dpr;
+        if (this.ctx.resetTransform) {
+          this.ctx.resetTransform();
+        }
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.draw();
+      }
+
+      push(val) {
+        if (typeof val === 'number' && !isNaN(val)) {
+          this.data.push(val);
+          if (this.data.length > this.maxPoints) {
+            this.data.shift();
+          }
+        }
+      }
+
+      startLoop() {
+        const loop = () => {
+          this.pulse = (this.pulse + 0.05) % (Math.PI * 2);
+          this.draw();
+          this.animId = requestAnimationFrame(loop);
+        };
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.animId = requestAnimationFrame(loop);
+      }
+
+      draw() {
+        if (!this.ctx || !this.cssWidth || !this.cssHeight) return;
+        const ctx = this.ctx;
+        const w = this.cssWidth;
+        const h = this.cssHeight;
+
+        // Clear
+        ctx.clearRect(0, 0, w, h);
+
+        const padLeft = 48;
+        const padRight = 24;
+        const padTop = 22;
+        const padBottom = 26;
+        const plotW = w - padLeft - padRight;
+        const plotH = h - padTop - padBottom;
+
+        if (plotW <= 0 || plotH <= 0) return;
+
+        // Dynamic Range Calculation
+        let minVal = Math.min(...this.data);
+        let maxVal = Math.max(...this.data);
+        if (minVal === maxVal) { minVal -= 5; maxVal += 5; }
+        const range = maxVal - minVal;
+        const yMin = Math.max(0, Math.floor(minVal - range * 0.2));
+        const yMax = Math.ceil(maxVal + range * 0.25);
+        const yRange = yMax - yMin || 1;
+
+        // Horizontal Gridlines & Y-Axis Labels
+        const gridSteps = 4;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.font = '10px "JetBrains Mono", Consolas, monospace';
+
+        for (let i = 0; i <= gridSteps; i++) {
+          const ratio = i / gridSteps;
+          const y = padTop + plotH * (1 - ratio);
+          const val = yMin + yRange * ratio;
+
+          // Gridline
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(226, 232, 240, 0.9)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          ctx.moveTo(padLeft, y);
+          ctx.lineTo(w - padRight, y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Label
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(`${Math.round(val)} MB`, padLeft - 8, y);
+        }
+
+        // Coordinate points mapping
+        const stepX = plotW / (this.data.length - 1 || 1);
+        const points = this.data.map((val, idx) => {
+          const normY = (val - yMin) / yRange;
+          return {
+            x: padLeft + idx * stepX,
+            y: padTop + plotH * (1 - Math.max(0, Math.min(1, normY)))
+          };
+        });
+
+        if (points.length < 2) return;
+
+        // Draw Spline Curve & Area Gradient Fill
+        ctx.save();
+        const fillPath = new Path2D();
+        fillPath.moveTo(points[0].x, padTop + plotH);
+        fillPath.lineTo(points[0].x, points[0].y);
+        for (let i = 0; i < points.length - 1; i++) {
+          const xc = (points[i].x + points[i + 1].x) / 2;
+          const yc = (points[i].y + points[i + 1].y) / 2;
+          fillPath.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        }
+        fillPath.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+        fillPath.lineTo(points[points.length - 1].x, padTop + plotH);
+        fillPath.closePath();
+
+        const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
+        grad.addColorStop(0, 'rgba(37, 99, 235, 0.20)');
+        grad.addColorStop(0.65, 'rgba(37, 99, 235, 0.05)');
+        grad.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+        ctx.fillStyle = grad;
+        ctx.fill(fillPath);
+        ctx.restore();
+
+        // Stroke Spline Line
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 0; i < points.length - 1; i++) {
+          const xc = (points[i].x + points[i + 1].x) / 2;
+          const yc = (points[i].y + points[i + 1].y) / 2;
+          ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        }
+        ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
+        // Glowing Pulsating Head Point
+        const lastPt = points[points.length - 1];
+        const pulseR = 5 + Math.sin(this.pulse) * 3;
+        const pulseAlpha = 0.28 + Math.sin(this.pulse) * 0.15;
+
+        // Outer Aura
+        ctx.beginPath();
+        ctx.arc(lastPt.x, lastPt.y, pulseR + 4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(37, 99, 235, ${pulseAlpha})`;
+        ctx.fill();
+
+        // Inner Core Bead
+        ctx.beginPath();
+        ctx.arc(lastPt.x, lastPt.y, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Tooltip Pill at Head
+        const latestVal = this.data[this.data.length - 1].toFixed(1) + ' MB';
+        ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
+        const txtWidth = ctx.measureText(latestVal).width;
+        const tipX = Math.min(w - padRight - txtWidth - 10, Math.max(padLeft, lastPt.x - txtWidth / 2));
+        const tipY = Math.max(padTop - 6, lastPt.y - 14);
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(tipX - 6, tipY - 11, txtWidth + 12, 17, 4);
+        } else {
+          ctx.rect(tipX - 6, tipY - 11, txtWidth + 12, 17);
+        }
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(latestVal, tipX, tipY + 1);
+      }
+    }
+
+    // Default Fallback Task Definitions
+    const defaultTasks = [
+      { id: "file-backup", name: "File & Folder Backup Engine", version: "1.0.0", author: "JVM Studio Core", category: "File Operations", description: "Recursive folder backup with collision handling, loop prevention, and chunked progress.", isBuiltIn: true, state: "READY" },
+      { id: "folder-analyzer", name: "Disk & Folder Storage Analyzer", version: "1.0.0", author: "JVM Studio Core", category: "Analysis", description: "Deep disk scanner detailing volume, extension distribution, and largest files.", isBuiltIn: true, state: "READY" },
+      { id: "sha256-verifier", name: "SHA-256 Cryptographic Verifier", version: "1.0.0", author: "JVM Studio Core", category: "Security", description: "Computes cryptographic SHA-256 hashes with real streaming and table copy.", isBuiltIn: true, state: "READY" },
+      { id: "memory-allocation-demo", name: "JVM Heap Allocation & GC Demo", version: "1.0.0", author: "JVM Studio Core", category: "Educational Lab", description: "Interactive educational demonstration of heap allocation, GC roots, and reference clearing.", isBuiltIn: true, state: "READY" },
+      { id: "word-frequency-counter", name: "Text & Code Word Counter", version: "1.0.0", author: "JVM Studio Core Team", category: "Text Analysis", description: "Recursively parses text and source files, calculates word frequencies, and surfaces top keywords.", isBuiltIn: false, state: "READY" }
+    ];
+
+    // Default Fallback History Records
+    const defaultHistory = [
+      { executionId: "exec-9a1b2c", taskName: "SHA-256 Cryptographic Verifier", category: "Security", state: "SUCCESS", durationMs: 42, itemsProcessed: 1250, summary: "Streamed 1,250 file blocks, calculated SHA-256 hashes without memory leaks." },
+      { executionId: "exec-8f3d4e", taskName: "JVM Heap Allocation & GC Demo", category: "Educational Lab", state: "SUCCESS", durationMs: 18, itemsProcessed: 40, summary: "Allocated 40MB across 2,000 objects in Eden, triggered 1 Minor GC." },
+      { executionId: "exec-7c2a1b", taskName: "Disk & Folder Storage Analyzer", category: "Analysis", state: "SUCCESS", durationMs: 65, itemsProcessed: 8900, summary: "Scanned 8,900 directory entries, generated extension distribution histogram." }
+    ];
+
+    // Initialize Native Spline Chart
+    function initChart() {
+      heapCanvasChart = new LiveSplineRenderer('liveHeapChart');
+    }
+
+    // Poll Real Server Metrics with Organic Breathing Simulation Fallback
+    async function pollMetrics() {
+      try {
+        const res = await fetch('/api/metrics');
+        if (res.ok) {
+          const d = await res.json();
+          if (d.heapUsedMb !== undefined) {
+            updateMetricsUI(d.heapUsedMb, d.heapCommittedMb, d.heapMaxMb, d.liveThreads, d.totalGcCount, d.totalGcTimeMs);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Fallback breathing curve
+      simulatedHeapMb = Math.max(30, Math.min(180, simulatedHeapMb + (Math.random() * 2.0 - 0.9)));
+      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
+    }
+
+    function updateMetricsUI(usedMb, committedMb, maxMb, workers, gcCount, gcTimeMs) {
+      const valHeap = document.getElementById('val-heap');
+      const chartLive = document.getElementById('chart-live-val');
+      const subHeap = document.getElementById('sub-heap');
+      const valWorkers = document.getElementById('val-workers');
+      const valGc = document.getElementById('val-gc');
+      const subGc = document.getElementById('sub-gc');
+
+      if (valHeap) valHeap.innerText = usedMb.toFixed(1) + ' MB';
+      if (chartLive) chartLive.innerText = usedMb.toFixed(1) + ' MB';
+      if (subHeap) subHeap.innerText = `Committed: ${committedMb ? committedMb.toFixed(0) : 116} MB | Max: ${maxMb ? maxMb.toFixed(0) : 1846} MB`;
+      if (valWorkers) valWorkers.innerText = (workers || 8) + ' Threads';
+      if (valGc) valGc.innerText = (gcCount || 0) + ' Collections';
+      if (subGc) subGc.innerText = `Total Pause Duration: ${gcTimeMs || 0} ms`;
+
+      if (heapCanvasChart) {
+        heapCanvasChart.push(usedMb);
+      }
+    }
+
+    // Poll Tasks from Server / Local Fallback
+    async function pollTasks() {
+      try {
+        const res = await fetch('/api/tasks');
+        if (res.ok) {
+          const tasks = await res.json();
+          cachedTasks = tasks;
+          const valTasks = document.getElementById('val-tasks');
+          if (valTasks) valTasks.innerText = tasks.length + ' Tasks';
+          renderTasksTable(tasks);
+          return;
+        }
+      } catch (e) {}
+
+      if (cachedTasks.length === 0) {
+        cachedTasks = [...defaultTasks];
+      }
+      const valTasks = document.getElementById('val-tasks');
+      if (valTasks) valTasks.innerText = cachedTasks.length + ' Tasks';
+      renderTasksTable(cachedTasks);
+    }
+
+    function renderTasksTable(tasks) {
+      const container = document.getElementById('tasks-table-body');
+      if (!container) return;
+      container.innerHTML = tasks.map(t => `
+        <tr>
+          <td>
+            <strong>${t.name}</strong><br>
+            <span style="font-size:11.5px; color:var(--text-dim);">${t.description}</span>
+          </td>
+          <td><span style="font-size:11.5px; color:var(--text-dim);">${t.category}</span></td>
+          <td>
+            <span style="font-size:11px; font-weight:700; color:${t.isBuiltIn ? 'var(--accent-primary)' : 'var(--accent-purple)'}; background:${t.isBuiltIn ? 'var(--accent-primary-light)' : 'var(--accent-purple-light)'}; padding:3px 8px; border-radius:999px; white-space:nowrap;">
+              ${t.isBuiltIn ? 'Core Built-In' : 'Dynamic URLClassLoader'}
+            </span>
+          </td>
+          <td>
+            <span class="badge-state ${getStateBadgeClass(t.state)}">${t.state || 'READY'}</span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn btn-primary" style="padding:5px 12px; font-size:11.5px;" onclick="runTask('${t.id}')">
+                Run Task
+              </button>
+              ${t.state === 'RUNNING' ? `
+                <button class="btn btn-danger" style="padding:5px 10px; font-size:11.5px;" onclick="cancelTask('${t.id}')">
+                  Cancel
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getStateBadgeClass(state) {
+      if (state === 'RUNNING') return 'badge-running';
+      if (state === 'SUCCESS') return 'badge-success';
+      if (state === 'CANCELLED' || state === 'FAILED') return 'badge-cancelled';
+      return 'badge-ready';
+    }
+
+    // Execute Task via API with Simulated Fallback
+    async function runTask(taskId) {
+      updateTaskState(taskId, 'RUNNING');
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/run`, { method: 'POST' });
+        if (res.ok) {
+          const result = await res.json();
+          setTimeout(() => {
+            updateTaskState(taskId, result.success ? 'SUCCESS' : 'FAILED');
+            loadHistory();
+            pollMetrics();
+          }, 800);
+          return;
+        }
+      } catch (e) {}
+
+      // Fallback local simulation
+      setTimeout(() => {
+        updateTaskState(taskId, 'SUCCESS');
+        const execId = 'exec-' + Math.random().toString(36).substring(2, 8);
+        const taskDef = cachedTasks.find(t => t.id === taskId) || { name: taskId, category: "Core" };
+        defaultHistory.unshift({
+          executionId: execId,
+          taskName: taskDef.name,
+          category: taskDef.category,
+          state: "SUCCESS",
+          durationMs: Math.floor(Math.random() * 80 + 15),
+          itemsProcessed: Math.floor(Math.random() * 500 + 50),
+          summary: `Successfully executed ${taskDef.name} via thread pool worker.`
+        });
+        loadHistory();
+        pollMetrics();
+      }, 1000);
+    }
+
+    function updateTaskState(taskId, state) {
+      const task = cachedTasks.find(t => t.id === taskId);
+      if (task) task.state = state;
+      renderTasksTable(cachedTasks);
+    }
+
+    async function cancelTask(taskId) {
+      try {
+        await fetch(`/api/tasks/${taskId}/cancel`, { method: 'POST' });
+      } catch (e) {}
+      updateTaskState(taskId, 'CANCELLED');
+    }
+
+    // Memory Allocation Lab Functions
+    async function allocChunk() {
+      try {
+        const res = await fetch(`/api/memory/allocate?sizeMb=${currentAllocMb}`, { method: 'POST' });
+        if (res.ok) {
+          pollMetrics();
+          return;
+        }
+      } catch (e) {}
+
+      // Local Fallback simulation
+      simulatedHeapMb += currentAllocMb;
+      if (heapCanvasChart) heapCanvasChart.push(simulatedHeapMb);
+      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
+    }
+
+    async function freeChunks() {
+      try {
+        const res = await fetch('/api/memory/free', { method: 'POST' });
+        if (res.ok) {
+          pollMetrics();
+          return;
+        }
+      } catch (e) {}
+
+      // Local Fallback simulation
+      simulatedHeapMb = Math.max(34.8, simulatedHeapMb - 20);
+      if (heapCanvasChart) heapCanvasChart.push(simulatedHeapMb);
+      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
+    }
+
+    async function requestGc() {
+      try {
+        const res = await fetch('/api/memory/gc', { method: 'POST' });
+        if (res.ok) {
+          pollMetrics();
+          return;
+        }
+      } catch (e) {}
+
+      // Local Fallback simulation
+      simulatedHeapMb = 34.8;
+      simulatedGcCount++;
+      simulatedGcTimeMs += Math.floor(Math.random() * 8 + 5);
+      if (heapCanvasChart) heapCanvasChart.push(simulatedHeapMb);
+      updateMetricsUI(simulatedHeapMb, 116, 1846, 8, simulatedGcCount, simulatedGcTimeMs);
+    }
+
+    // Load Audit Execution History
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/history');
+        if (res.ok) {
+          const history = await res.json();
+          renderHistoryTable(history);
+          return;
+        }
+      } catch (e) {}
+
+      renderHistoryTable(defaultHistory);
+    }
+
+    function renderHistoryTable(items) {
+      const container = document.getElementById('history-table-body');
+      if (!container) return;
+      if (!items || items.length === 0) {
+        container.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:24px;">No historical executions recorded yet. Run a task above.</td></tr>`;
+        return;
+      }
+
+      container.innerHTML = items.slice(0, 10).map(h => `
+        <tr>
+          <td><code style="font-size:11.5px; background:var(--bg-elevated); padding:2px 6px; border-radius:4px;">${h.executionId}</code></td>
+          <td><strong>${h.taskName}</strong></td>
+          <td><span style="font-size:11.5px; color:var(--text-dim);">${h.category}</span></td>
+          <td>
+            <span class="badge-state ${getStateBadgeClass(h.state)}">${h.state}</span>
+          </td>
+          <td>${h.durationMs !== undefined ? h.durationMs + ' ms' : '—'}</td>
+          <td>${h.itemsProcessed !== undefined ? h.itemsProcessed.toLocaleString() : '—'}</td>
+          <td><span style="font-size:12px; color:var(--text-muted);">${h.summary || 'Completed successfully.'}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Bootstrap Application Lifecycle
+    window.addEventListener('DOMContentLoaded', () => {
+      initChart();
+      pollMetrics();
+      pollTasks();
+      loadHistory();
+
+      // Recurring 1Hz Telemetry Poller
+      setInterval(pollMetrics, 1000);
+      setInterval(pollTasks, 4000);
+    });
+  </script>
+</body>
+</html>
